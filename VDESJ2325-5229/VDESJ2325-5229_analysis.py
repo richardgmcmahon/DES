@@ -49,6 +49,8 @@ from numpy import ma
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
+
+from matplotlib import patches
 from matplotlib.patches import Circle, Ellipse
 
 from astropy.io import fits
@@ -66,6 +68,233 @@ from astropy.stats import mad_std
 
 sys.path.append('/home/rgm/soft/python/lib/')
 from librgm.plotid import plotid
+
+
+def plot_compass_arrow(AstWCS=None, direction='NS',
+                       location=None,
+                       length=2.0,
+                       overplot=False):
+    """
+
+    Matplotlib arrow support:
+
+    http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.arrow
+
+    e.g.
+
+    plt.arrow(x, y, dx, dy,
+              head_width=0.05, head_length=0.1,
+              facecolor='k', edgecolor='k')
+
+
+    # Object oriented method
+    # see https://scipy.github.io/old-wiki/pages/Cookbook/Matplotlib/Arrows.html
+    Get the subplot that we are currently working on
+    ax = gca()
+
+    # Now add the arrow
+    ax.add_patch(arr)
+
+
+    http://matplotlib.org/api/pyplot_api.html#matplotlib.pyplot.annotate
+
+    http://matplotlib.org/api/patches_api.html#matplotlib.patches.ArrowStyle
+
+
+    location code examples are here:
+
+    http://matplotlib.org/api/legend_api.html#matplotlib.legend.Legend
+
+
+    Astropy
+
+    http://docs.astropy.org/en/stable/nddata/utils.html
+
+    http://docs.astropy.org/en/stable/nddata/utils.html#d-cutout-from-a-skycoord-position
+
+
+    """
+
+    import numpy as np
+
+    from matplotlib import pyplot as plt
+    from matplotlib.patches import Circle, Ellipse
+
+    demo = True
+
+    print('Compute the on-sky position angle (East of North)')
+
+    c1 = SkyCoord(0*u.deg, 0*u.deg)
+    Separators = ' '
+    precision = 1
+    print('c1:',
+          c1.ra.to_string(unit=u.hour,
+          precision=precision+1, sep=' ', pad=True),
+          c1.dec.to_string(unit=u.degree,
+          precision=precision, sep=' ',
+          pad=True, alwayssign=True))
+
+    c2 = SkyCoord(1*u.deg, 0*u.deg)
+
+    print('c2:',
+          c2.ra.to_string(unit=u.hour,
+          precision=precision+1, sep=' ', pad=True),
+          c2.dec.to_string(unit=u.degree,
+          precision=precision, sep=' ',
+          pad=True, alwayssign=True))
+
+    PA = c1.position_angle(c2).degree
+    print('PA:', PA)
+
+    c1 = SkyCoord(1*u.deg, 0*u.deg)
+    c2 = SkyCoord(0*u.deg, 0*u.deg)
+
+    print('c1:',
+          c1.ra.to_string(unit=u.hour,
+          precision=precision+1, sep=' ', pad=True),
+          c1.dec.to_string(unit=u.degree,
+          precision=precision, sep=' ',
+          pad=True, alwayssign=True))
+
+    print('c2:',
+          c2.ra.to_string(unit=u.hour,
+          precision=precision+1, sep=' ', pad=True),
+          c2.dec.to_string(unit=u.degree,
+          precision=precision, sep=' ',
+          pad=True, alwayssign=True))
+
+
+    # Computes the on-sky position angle (East of North)
+    PA = c1.position_angle(c2).degree
+    print('PA:', PA)
+
+    if not overplot:
+        plt.figure(figsize=(8,6))
+
+        plt.plot([-10.0,10.0], [-10.0, 10.0], '.r')
+
+    xrange = 20
+    yrange = 20
+
+    xarrow = 0.0
+    yarrow = 0.0
+    dxarrow = 0.0
+    dyarrow = 2.0
+
+    # plt.arrow( x, y, dx, dy, **kwargs )
+    plt.arrow(xarrow, yarrow, dxarrow, dyarrow,
+              head_width=0.4, head_length=0.4,
+              facecolor='k', edgecolor='k')
+
+    plt.arrow(0.0, 0.0, 2.0, 0.0,
+              head_width=0.4, head_length=0.4,
+              facecolor='k', edgecolor='k')
+
+    plt.annotate('E', xy=(2.5, 0.0),
+                 xycoords='data',
+                 horizontalalignment='left',
+                 verticalalignment='center',
+                 fontsize='large')
+
+    plt.annotate('N', xy=(0.0, 2.5),
+                 xycoords='data',
+                 horizontalalignment='center',
+                 verticalalignment='bottom',
+                 fontsize='large')
+
+    plt.plot([-2.5, 2.5], [-8.0, -8.0], 'k', linewidth=2)
+    plt.annotate('5"', xy=(0.0, -8.5),
+                 xycoords='data',
+                 horizontalalignment='center',
+                 verticalalignment='top',
+                 fontsize='large')
+
+    plt.suptitle('On-sky position angle (PA) (East of North)')
+
+    plt.xlabel('Arc seconds')
+    plt.ylabel('Arc seconds')
+    plt.axes().set_aspect('equal')
+
+    # plot ellipse
+    x0 = 0.0
+    y0 = 0.0
+    width = 4
+    height = 8
+    angle = 45.0
+    theta = np.arange(0.0, 360.0, 1.0) * (np.pi / 180.0)
+    xdata = x0 + (0.5 * width * np.cos(theta))
+    ydata = y0 + (0.5 * height * np.sin(theta))
+
+    rtheta = np.radians(angle)
+    R = np.array([
+                  [np.cos(rtheta), -np.sin(rtheta)],
+                  [np.sin(rtheta),  np.cos(rtheta)],
+                 ])
+
+    xdata, ydata = np.dot(R, np.array([xdata, ydata]))
+
+    plt.plot(xdata, ydata, 'b')
+
+    plt.annotate('PA = ' + str(angle),
+                 xy=(-9.0, 9.0),
+                 xycoords='data',
+                 horizontalalignment='left',
+                 verticalalignment='center',
+                 fontsize='large')
+
+    xcenter = 5
+    ycenter = 5
+    width = 2
+    height = width * 3
+    angle = 0
+    e1 = patches.Ellipse((xcenter, ycenter), width, height,
+                         color = 'b',
+                         angle=angle, linewidth=1,
+                         fill=False, zorder=2)
+
+    ax = plt.gca()
+    ax.add_patch(e1)
+
+    angle = 30
+    e2 = patches.Ellipse((xcenter, ycenter), width, height,
+                         color = 'r',
+                         angle=angle, linewidth=1,
+                         fill=False, zorder=2)
+
+    ax = plt.gca()
+    ax.add_patch(e2)
+
+
+    angle = 60
+    e2 = patches.Ellipse((xcenter, ycenter), width, height,
+                         color = 'r',
+                         angle=angle, linewidth=1,
+                         fill=False, zorder=2)
+
+    ax = plt.gca()
+    ax.add_patch(e2)
+
+
+    angle = 90
+    e2 = patches.Ellipse((xcenter, ycenter), width, height,
+                         color = 'r',
+                         angle=angle, linewidth=1,
+                         fill=False, zorder=2)
+
+    ax = plt.gca()
+    ax.add_patch(e2)
+
+
+    plt.grid()
+    plotid()
+    plt.show()
+
+
+def plot_scale_bar():
+    """
+
+    """
+
 
 
 def radec2xieta(ra, dec, racent, deccent, xi, eta):
@@ -530,13 +759,18 @@ def list_lenses():
 
 if __name__ == "__main__":
 
+
+
+    plot_compass_arrow(direction='NS', length=2.0)
+
+    key=raw_input("Enter any key to continue: ")
+
+
     from argparse import ArgumentParser
 
     import ConfigParser
     config = ConfigParser.RawConfigParser()
     config.read('VDESJ2325-5229_analysis.cfg')
-
-
 
     parser = ArgumentParser()
 
@@ -768,6 +1002,7 @@ if __name__ == "__main__":
         position=(xpix, ypix), format='pixels',
         size=size, plot=True, saveplot=True,
         plotfile_prefix=plotfile_prefix,
+        plotfile_suffix=plotfile_suffix,
         verbose=False, debug=debug)
 
 
@@ -778,6 +1013,7 @@ if __name__ == "__main__":
         position=(xpix, ypix), format='pixels', weightmap=True,
         size=size, plot=True, saveplot=True,
         plotfile_prefix=plotfile_prefix,
+        plotfile_suffix=plotfile_suffix,
         verbose=False, debug=debug)
 
 
@@ -791,7 +1027,6 @@ if __name__ == "__main__":
         verbose=False, debug=debug)
 
     key=raw_input("Enter any key to continue: ")
-
 
 
     print('format: ', format)
