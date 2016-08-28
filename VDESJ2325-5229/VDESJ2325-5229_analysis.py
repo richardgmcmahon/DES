@@ -757,19 +757,23 @@ def list_lenses():
         print(lens)
 
 
+def explore_wise2des(data=None):
+    """
+
+    """
+
+
 if __name__ == "__main__":
 
 
-
-    plot_compass_arrow(direction='NS', length=2.0)
-
-    key=raw_input("Enter any key to continue: ")
+    # plot_compass_arrow(direction='NS', length=2.0)
+    # key=raw_input("Enter any key to continue: ")
 
 
     from argparse import ArgumentParser
 
-    import ConfigParser
-    config = ConfigParser.RawConfigParser()
+    import configparser
+    config = configparser.RawConfigParser()
     config.read('VDESJ2325-5229_analysis.cfg')
 
     parser = ArgumentParser()
@@ -868,8 +872,11 @@ if __name__ == "__main__":
     print('RELEASE: ', RELEASE)
     print('SOURCE: ', source)
 
-
     datapath_desroot = config.get(source, 'datapath_desroot')
+
+    if format.upper() == 'WISE2DES':
+        datapath_wise2des = config.get(source, 'datapath_wise2des')
+
 
     datapath_cats = config.get(source, 'datapath_cats')
     # datapath_cats =   /data/des/VDESJ2325-5229/
@@ -958,75 +965,86 @@ if __name__ == "__main__":
     if format == 'COADD':
         infile = datapath + filename_COADD
 
+    if format.upper() == 'WISE2DES':
+        tilename = 'DES0406-5414'
+        suffix_wise2des = '_WISEfp_DEScat_WISE_match'
+        infile = datapath_wise2des + tilename + '/' + \
+            tilename + suffix_wise2des + '.fits'
+        catfile = infile
+
     print('infile: ', infile)
 
     inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
-
     print('inpath: ', inpath)
 
-    catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
+    if format.upper() != 'WISE2DES':
+        catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
+
     print('Read catfile: ', catfile)
     catdata = Table.read(catfile)
     print(catdata.colnames)
     catdata.info('stats')
 
-    # fz format
-    fzformat=True
-    imagename = TILENAME + '_' + BAND + '.fits'
-    if fzformat: imagename = imagename + '.fz'
-    imagefile = inpath + imagename
 
-    segmapname = TILENAME + '_' + BAND + '_seg.fits'
-    if fzformat: segmapname = segmapname + '.fz'
-    segmapfile = inpath + '/segmap/' + segmapname
+    plotimages = False
+
+    if plotimages:
+        # fz format
+        fzformat=True
+        imagename = TILENAME + '_' + BAND + '.fits'
+        if fzformat: imagename = imagename + '.fz'
+        imagefile = inpath + imagename
+
+        segmapname = TILENAME + '_' + BAND + '_seg.fits'
+        if fzformat: segmapname = segmapname + '.fz'
+        segmapfile = inpath + '/segmap/' + segmapname
+
+        print('Read WCS for: ', imagefile)
+        if debug: help(get_wcs)
+        wcs_image=get_wcs(imagefile, verbose=True, debug=debug)
+        #help(wcs_image)
+        #print(wcs_image.wcs.name)
+        xpix, ypix = wcs_image.wcs_world2pix(ra_source, dec_source, 1)
+        print('RA, Dec, X, Y: ', ra_source, dec_source, xpix, ypix)
+
+        filename = imagename
+        plotfile_prefix = source
+        suptitle = filename
+        title = source
+
+        size = 100
+        size = 38
+
+        plotfile_suffix = BAND + '_' + str(size)
+        get_cutout(infile = imagefile, ext=1,
+            title=title, suptitle=suptitle,
+            position=(xpix, ypix), format='pixels',
+            size=size, plot=True, saveplot=True,
+            plotfile_prefix=plotfile_prefix,
+            plotfile_suffix=plotfile_suffix,
+            verbose=False, debug=debug)
+
+        # weight map
+        ext=2
+        get_cutout(infile = imagefile, ext=ext,
+            title=title, suptitle=suptitle,
+            position=(xpix, ypix), format='pixels', weightmap=True,
+            size=size, plot=True, saveplot=True,
+            plotfile_prefix=plotfile_prefix,
+            plotfile_suffix=plotfile_suffix,
+            verbose=False, debug=debug)
 
 
-    print('Read WCS for: ', imagefile)
-    if debug: help(get_wcs)
-    wcs_image=get_wcs(imagefile, verbose=True, debug=debug)
-    #help(wcs_image)
-    #print(wcs_image.wcs.name)
-    xpix, ypix = wcs_image.wcs_world2pix(ra_source, dec_source, 1)
-    print('RA, Dec, X, Y: ', ra_source, dec_source, xpix, ypix)
+        ext=1
+        get_cutout(infile = segmapfile, ext=ext,
+            title=title, suptitle=suptitle,
+            position=(xpix, ypix), format='pixels', segmap=True,
+            size=size, plot=True, saveplot=True,
+            plotfile_prefix=plotfile_prefix,
+            plotfile_suffix=plotfile_suffix,
+            verbose=False, debug=debug)
 
-    filename = imagename
-    plotfile_prefix = source
-    suptitle = filename
-    title = source
-
-    size = 100
-    size = 38
-    plotfile_suffix = BAND + '_' + str(size)
-    get_cutout(infile = imagefile, ext=1,
-        title=title, suptitle=suptitle,
-        position=(xpix, ypix), format='pixels',
-        size=size, plot=True, saveplot=True,
-        plotfile_prefix=plotfile_prefix,
-        plotfile_suffix=plotfile_suffix,
-        verbose=False, debug=debug)
-
-
-    # weight map
-    ext=2
-    get_cutout(infile = imagefile, ext=ext,
-        title=title, suptitle=suptitle,
-        position=(xpix, ypix), format='pixels', weightmap=True,
-        size=size, plot=True, saveplot=True,
-        plotfile_prefix=plotfile_prefix,
-        plotfile_suffix=plotfile_suffix,
-        verbose=False, debug=debug)
-
-
-    ext=1
-    get_cutout(infile = segmapfile, ext=ext,
-        title=title, suptitle=suptitle,
-        position=(xpix, ypix), format='pixels', segmap=True,
-        size=size, plot=True, saveplot=True,
-        plotfile_prefix=plotfile_prefix,
-        plotfile_suffix=plotfile_suffix,
-        verbose=False, debug=debug)
-
-    key=raw_input("Enter any key to continue: ")
+        key=raw_input("Enter any key to continue: ")
 
 
     print('format: ', format)
@@ -1034,7 +1052,6 @@ if __name__ == "__main__":
     data = Table.read(infile)
     print(data.colnames)
     data.info('stats')
-
 
     WAVEBANDS = ['G','R','I','Z','Y']
 
@@ -1451,6 +1468,42 @@ if __name__ == "__main__":
         print('Saving: ', plotfile)
 
         plt.show()
+
+    if format.upper() == 'WISE2DES':
+
+        ra = data['RA_CALC_I']
+        dec = data['DEC_CALC_I']
+
+        ra_min = np.min(ra)
+        ra_max = np.max(ra)
+        delta_ra = (ra - ra0)*3600.0 * np.cos(np.deg2rad(dec0))
+
+        dec_min = np.min(dec)
+        dec_max = np.max(dec)
+        delta_dec = (dec - dec0)*3600.0
+
+        xdata= delta_ra
+        ydata= delta_dec
+
+        itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
+                (ydata > yrange[0]) & (ydata < yrange[1])
+
+        xdata = xdata[itest]
+        ydata = ydata[itest]
+        ndata = len(xdata)
+
+        plt.figure(figsize=(8,8))
+        plt.axes().set_aspect('equal')
+        plt.plot(delta_ra, delta_dec, '.k', label='COADD: '+str(ndata))
+
+        if zoom:
+            plt.xlim(xrange)
+            plt.ylim(yrange)
+
+        plt.title(infile, fontsize='medium')
+        plt.grid(True)
+
+
 
     # match the objects to the nominal Lensed source position
 
