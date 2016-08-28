@@ -74,15 +74,14 @@ def flags_stats(table):
              (table['DES iFlag'] < 0) & (table['DES zFlag'] < 0) &
              (table['DES YFlag'] < 0))
 
-    print('Number zero < 0  ALL bands GRIZY: ',
+    print('Number zero < 0  ALL bands GRIZY:',
           len(table[itest]))
 
+    itest = ((table['DES gFlag'] == 0) | (table['DES rFlag'] == 0) |
+             (table['DES iFlag'] == 0) | (table['DES zFlag'] == 0) |
+             (table['DES YFlag'] == 0))
 
-    itest = ((table['DES gFlag'] = 0) | (table['DES rFlag'] = 0) |
-             (table['DES iFlag'] = 0) | (table['DES zFlag'] = 0) |
-             (table['DES YFlag'] = 0))
-
-    print('Number FLAGS_GRIZY = 0 in at least on band: ',
+    print('Number FLAGS_GRIZY = 0 in at least on band:',
           len(table[itest]))
 
     FLAG = 'DES gFlag'
@@ -93,7 +92,7 @@ def flags_stats(table):
     bins = 7
     range = [-0.5, bins - 0.5]
     ndata = len(xdata)
-    plt.hist(xdata-0.5, bins=bins, range=range,
+    plt.hist(xdata - 0.5, bins=bins, range=range,
              align='mid', histtype='step',
              label=FLAG + ': ' + str(ndata))
 
@@ -104,10 +103,9 @@ def flags_stats(table):
     print(xrange)
     bins = 7
     ndata = len(xdata)
-    plt.hist(xdata-0.5, bins=bins, range=range,
+    plt.hist(xdata - 0.5, bins=bins, range=range,
              align='mid', histtype='step',
              label=FLAG + ': ' + str(ndata))
-
 
     FLAG = 'DES iFlag'
     xdata = table[FLAG]
@@ -116,10 +114,9 @@ def flags_stats(table):
     print(xrange)
     bins = 7
     ndata = len(xdata)
-    plt.hist(xdata-0.5, bins=bins, range=range,
+    plt.hist(xdata - 0.5, bins=bins, range=range,
              align='mid', histtype='step',
              label=FLAG + ': ' + str(ndata))
-
 
     FLAG = 'DES zFlag'
     xdata = table[FLAG]
@@ -128,10 +125,9 @@ def flags_stats(table):
     print(xrange)
     bins = 7
     ndata = len(xdata)
-    plt.hist(xdata-0.5, bins=bins, range=range,
+    plt.hist(xdata - 0.5, bins=bins, range=range,
              align='mid', histtype='step',
              label=FLAG + ': ' + str(ndata))
-
 
     FLAG = 'DES YFlag'
     xdata = table[FLAG]
@@ -140,10 +136,9 @@ def flags_stats(table):
     print(xrange)
     bins = 7
     ndata = len(xdata)
-    plt.hist(xdata-0.5, bins=bins, range=range,
+    plt.hist(xdata - 0.5, bins=bins, range=range,
              align='mid', histtype='step',
              label=FLAG + ': ' + str(ndata))
-
 
     # plt.hist(xdata, bins, histtype='step')
     # plt.hist(xdata, histtype='step')
@@ -159,11 +154,20 @@ def flags_stats(table):
     plotid.plotid()
     plt.show()
 
-    return
+    itest = ((table['DES gFlag'] == 0) | (table['DES rFlag'] == 0) |
+             (table['DES iFlag'] == 0) | (table['DES zFlag'] == 0) |
+             (table['DES YFlag'] == 0))
+
+    print('Number FLAGS_GRIZY = 0 in at least on band:',
+          len(table[itest]))
+
+    return itest
 
 
 if __name__ == "__main__":
+    """
 
+    """
 
     inpath = "/home/rgm/Projects/DES/OzDES/"
     filename = "OZDES_QSO_20160627.fits"
@@ -173,7 +177,7 @@ if __name__ == "__main__":
     table.info()
     table.info('stats')
 
-    flags_stats(table)
+    itest = flags_stats(table)
 
     xsize = 8
     ysize = 8
@@ -181,8 +185,40 @@ if __name__ == "__main__":
 
     xdata = table['REDSHIFT']
     ydata = table['DES coadd i']
+    ndata = len(xdata)
+    plt.scatter(xdata, ydata, label=str(ndata))
+    plt.title(filename)
+    plt.xlabel('Redshift')
+    plt.ylabel('DES coadd i')
+    plt.legend()
 
-    plt.scatter(xdata, ydata)
+    plt.show()
+
+    xdata = table['DES coadd i']
+    ndata = len(xdata)
+    bins = 25
+    plt.hist(xdata, bins=bins, histtype='step', label=str(ndata))
+
+    xdata = xdata[itest]
+    ndata = len(xdata)
+    plt.hist(xdata, bins=bins, histtype='step', label=str(ndata))
+    plt.xlabel('DES coadd i')
+    plt.ylabel('Number')
+    plt.legend()
+
+    plt.show()
+
+    xdata = table['REDSHIFT']
+    bins = 50
+    ndata = len(xdata)
+    plt.hist(xdata, bins=bins, histtype='step', label=str(ndata))
+
+    xdata = xdata[itest]
+    ndata = len(xdata)
+    plt.hist(xdata, bins=bins, histtype='step', label=str(ndata))
+    plt.xlabel('Redshift')
+    plt.ylabel('Number')
+    plt.legend()
 
     plt.show()
 
@@ -193,6 +229,7 @@ if __name__ == "__main__":
     ydata = table['DES coadd i'][itest] - table['DES coadd z'][itest]
 
     ndata = len(xdata)
+    print(np.median(xdata), np.median(ydata), len(xdata), len(ydata))
     plt.scatter(xdata, ydata, color='blue', edgecolor='none',
                 label=str(ndata))
     plt.title(filename)
@@ -200,18 +237,13 @@ if __name__ == "__main__":
     plt.ylabel('i - z [DES coadd]')
     plt.xlim(0.0, 5.0)
     plt.legend()
-
-    print(np.median(xdata), np.median(ydata), len(xdata), len(ydata))
-
     plt.show()
-
 
     itest = (table['DES coadd g'] < 90) & (table['DES coadd i'] < 90)
     xdata = table['REDSHIFT'][itest]
     ydata = table['DES coadd g'][itest] - table['DES coadd i'][itest]
 
     plt.scatter(xdata, ydata)
-
     plt.show()
 
     itest = (table['W1'] < 90) & (table['W2'] < 90)
@@ -219,14 +251,11 @@ if __name__ == "__main__":
     ydata = table['W1'][itest] - table['W2'][itest]
 
     plt.scatter(xdata, ydata)
-
     plt.show()
-
 
     itest = (table['W1'] < 90) & (table['W2'] < 90)
     xdata = table['REDSHIFT'][itest]
     ydata = table['W1'][itest] - table['W2'][itest]
 
     plt.scatter(xdata, ydata)
-
     plt.show()
