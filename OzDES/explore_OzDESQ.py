@@ -42,14 +42,12 @@ def flags_stats(table):
 
         print()
 
-
     itest = ((table['DES gFlag'] == 0) & (table['DES rFlag'] == 0) &
              (table['DES iFlag'] == 0) & (table['DES zFlag'] == 0) &
              (table['DES YFlag'] == 0))
 
     print('Number FLAG = 0  bands GRIZY: ',
           len(table[itest]))
-
 
     itest = ((table['DES gFlag'] <= 3) & (table['DES rFlag'] <= 3) &
              (table['DES iFlag'] <= 3) & (table['DES zFlag'] <= 3) &
@@ -58,16 +56,12 @@ def flags_stats(table):
     print('Number FLAG <= 3  ALL bands GRIZY: ',
           len(table[itest]))
 
-
-
     itest = ((table['DES gFlag'] > 0) & (table['DES rFlag'] > 0) &
              (table['DES iFlag'] > 0) & (table['DES zFlag'] > 0) &
              (table['DES YFlag'] > 0))
 
-
     print('Number zero > 0  ALL bands GRIZY: ',
           len(table[itest]))
-
 
     itest = ((table['DES gFlag'] < 0) & (table['DES rFlag'] < 0) &
              (table['DES iFlag'] < 0) & (table['DES zFlag'] < 0) &
@@ -76,6 +70,20 @@ def flags_stats(table):
     print('Number zero < 0  ALL bands GRIZY: ',
           len(table[itest]))
 
+    itest = ((table['DES gFlag'] < 0) & (table['DES rFlag'] < 0) &
+             (table['DES iFlag'] < 0) & (table['DES zFlag'] < 0) &
+             (table['DES YFlag'] < 0))
+
+    print('Number zero < 0  ALL bands GRIZY: ',
+          len(table[itest]))
+
+
+    itest = ((table['DES gFlag'] = 0) | (table['DES rFlag'] = 0) |
+             (table['DES iFlag'] = 0) | (table['DES zFlag'] = 0) |
+             (table['DES YFlag'] = 0))
+
+    print('Number FLAGS_GRIZY = 0 in at least on band: ',
+          len(table[itest]))
 
     FLAG = 'DES gFlag'
     xdata = table[FLAG]
