@@ -10,7 +10,7 @@ also look at desdb for downloading on the fly option
 see http://docs.astropy.org/en/stable/coordinates/matchsep.htm
 
 TODO: go from COADD source to Single Epoch source and the
-chip it FINALCUT Image and Chip it comes from.
+chip in the FINALCUT SE Image and Chip it comes from.
 
 https://opensource.ncsa.illinois.edu/confluence/display/DESDM/Y1A1+release+notes
 
@@ -37,12 +37,12 @@ RADEC_SOURCE_BAND
 
 
 """
-
 from __future__ import (print_function, division)
 
 import os
 import sys
 import time
+import inspect
 
 import numpy as np
 from numpy import ma
@@ -380,10 +380,10 @@ def source_info(ra_source, dec_source,
 
     """
 
-    print('Number of rows in table: ', len(data))
-    print('Format: ', format)
+    print('Number of rows in table:', len(data))
+    print('Format:', format)
     print('ra_source: ', ra_source)
-    print('dec_source: ', dec_source)
+    print('dec_source:', dec_source)
     ra_source = ra_source*u.degree
     dec_source = dec_source*u.degree
     print(Angle(ra_source), Angle(dec_source))
@@ -401,7 +401,7 @@ def source_info(ra_source, dec_source,
     idxsource, idxcatalog, d2d, d3d = \
         catalog.search_around_sky(radec_source, SearchRadius*u.arcsec)
 
-    print('Number of matched sources: ', len(idxsource), len(idxcatalog))
+    print('Number of matched sources:', len(idxsource), len(idxcatalog))
 
     print(idxsource)
 
@@ -529,9 +529,9 @@ def get_cutout(infile=None, data=None, ext=1, header=None,
     mad  = median_absolute_deviation(data)
     mad_stdev = mad_std(data)
 
-    print('mad: ', mad)
-    print('mad_std: ', mad_stdev)
-    print('mad/mad_std: ', mad_stdev/mad)
+    print('mad:', mad)
+    print('mad_std:', mad_stdev)
+    print('mad/mad_std:', mad_stdev/mad)
 
     if ext != 2:
         data = data - threshold
@@ -602,7 +602,7 @@ def get_cutout(infile=None, data=None, ext=1, header=None,
 
         plt.show()
 
-    return cutout
+    return cutout.data
 
 
 def plot_cutout():
@@ -757,6 +757,270 @@ def list_lenses():
         print(lens)
 
 
+
+def edgedetection(image=None):
+    """
+
+    http://scikit-image.org/docs/dev/api/skimage.feature.html#skimage.feature.canny
+    http://stackoverflow.com/questions/29434533/edge-detection-for-image-stored-in-matrix
+
+    """
+
+    import numpy as np
+    from matplotlib import pyplot as plt
+    from scipy import ndimage
+
+    from skimage import feature
+    from skimage.filters import roberts, sobel, scharr, prewitt
+
+    image_save = image
+
+    # for convenience
+    im = image
+
+
+    # Compute the Canny filter for two values of sigma
+    # http://scikit-image.org/docs/dev/api/skimage.feature.html#skimage.feature.cannya
+
+    print('Image pixel value range:', np.min(im), np.max(im))
+    edges1 = feature.canny(im, sigma=0.0,
+                           low_threshold=0.0, high_threshold=5.0)
+
+    # display results
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(16, 6),
+                                        sharex=True, sharey=True)
+
+    ax1.imshow(im, cmap=plt.cm.gray)
+    ax1.axis('off')
+    ax1.set_title('noisy image', fontsize=20)
+
+    ax2.imshow(edges1, cmap=plt.cm.gray)
+    ax2.axis('off')
+    ax2.set_title('Canny filter \n $\sigma=0.0$', fontsize=20)
+
+    fig.tight_layout()
+
+    plt.show()
+
+    # could try sobel filter
+    # http://scikit-image.org/docs/dev/auto_examples/plot_edge_filter.html
+
+    image = im
+    edge_roberts = roberts(image)
+    edge_sobel = sobel(image)
+
+    fig, (ax0, ax1) = plt.subplots(ncols=2,
+                                   sharex=True, sharey=True,
+                                   subplot_kw={'adjustable':'box-forced'})
+
+    ax0.imshow(edge_roberts, cmap=plt.cm.gray)
+    ax0.set_title('Roberts Edge Detection')
+    ax0.axis('off')
+
+    ax1.imshow(edge_sobel, cmap=plt.cm.gray)
+    ax1.set_title('Sobel Edge Detection')
+    ax1.axis('off')
+
+    plt.tight_layout()
+
+    plt.show()
+
+
+    # http://www.scipy-lectures.org/advanced/image_processing/auto_examples/plot_find_edges.html
+    """
+    Finding edges with Sobel filters
+    ==================================
+
+    The Sobel filter is one of the simplest way of finding edges.
+    """
+
+    import numpy as np
+    from scipy import ndimage
+    import matplotlib.pyplot as plt
+
+    im = np.zeros((256, 256))
+    im[64:-64, 64:-64] = 1
+
+    im = ndimage.rotate(im, 15, mode='constant')
+    im = ndimage.gaussian_filter(im, 8)
+
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
+    sob = np.hypot(sx, sy)
+
+    plt.figure(figsize=(16, 6))
+    plt.subplot(141)
+    plt.imshow(im, cmap=plt.cm.gray)
+    plt.axis('off')
+    plt.title('square', fontsize=20)
+    plt.subplot(142)
+    plt.imshow(sx)
+    plt.axis('off')
+    plt.title('Sobel (x direction)', fontsize=20)
+    plt.subplot(143)
+    plt.imshow(sob)
+    plt.axis('off')
+    plt.title('Sobel filter', fontsize=20)
+
+    im += 0.07*np.random.random(im.shape)
+
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
+    sob = np.hypot(sx, sy)
+
+    plt.subplot(144)
+    plt.imshow(sob)
+    plt.axis('off')
+    plt.title('Sobel for noisy image', fontsize=20)
+
+    plt.subplots_adjust(wspace=0.02, hspace=0.02,
+                        top=1, bottom=0, left=0, right=0.9)
+
+    plt.show()
+
+
+    # now apply to our image
+    im = image_save
+
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
+    sob = np.hypot(sx, sy)
+
+    plt.figure(figsize=(16, 6))
+    plt.subplot(141)
+    plt.imshow(im, cmap=plt.cm.gray)
+    plt.axis('off')
+    plt.title('square', fontsize=20)
+    plt.subplot(142)
+    plt.imshow(sx)
+    plt.axis('off')
+    plt.title('Sobel (x direction)', fontsize=20)
+    plt.subplot(143)
+    plt.imshow(sob)
+    plt.axis('off')
+    plt.title('Sobel filter', fontsize=20)
+
+    sx = ndimage.sobel(im, axis=0, mode='constant')
+    sy = ndimage.sobel(im, axis=1, mode='constant')
+    sob = np.hypot(sx, sy)
+
+    plt.subplot(144)
+    plt.imshow(sob)
+    plt.axis('off')
+    plt.title('Sobel for noisy image', fontsize=20)
+
+    plt.subplots_adjust(wspace=0.02, hspace=0.02,
+                        top=1, bottom=0, left=0, right=0.9)
+
+    plt.show()
+
+
+
+    # http://www.scipy-lectures.org/advanced/image_processing/auto_examples/plot_clean_morpho.html
+    # plot_clean_morpho.py
+
+
+    # def make_image():
+    # """
+    #
+    # """
+
+    np.random.seed(1)
+    n = 10
+    l = 256
+    im = np.zeros((l, l))
+    points = l*np.random.random((2, n**2))
+    im[(points[0]).astype(np.int), (points[1]).astype(np.int)] = 1
+    im = ndimage.gaussian_filter(im, sigma=l/(4.*n))
+
+    mask = (im > im.mean()).astype(np.float)
+
+
+    img = mask + 0.3*np.random.randn(*mask.shape)
+
+    binary_img = img > 0.5
+
+    # Remove small white regions
+    open_img = ndimage.binary_opening(binary_img)
+    # Remove small black hole
+    close_img = ndimage.binary_closing(open_img)
+
+    plt.figure(figsize=(16, 4))
+
+    l = 128
+
+    plt.subplot(141)
+    plt.imshow(binary_img[:l, :l], cmap=plt.cm.gray)
+    plt.axis('off')
+    plt.subplot(142)
+    plt.imshow(open_img[:l, :l], cmap=plt.cm.gray)
+    plt.axis('off')
+    plt.subplot(143)
+    plt.imshow(close_img[:l, :l], cmap=plt.cm.gray)
+    plt.axis('off')
+    plt.subplot(144)
+    plt.imshow(mask[:l, :l], cmap=plt.cm.gray)
+
+    plt.contour(close_img[:l, :l], [0.5], linewidths=2, colors='r')
+
+    plt.axis('off')
+
+    plt.subplots_adjust(wspace=0.02, hspace=0.3,
+                        top=1, bottom=0.1, left=0, right=1)
+
+    plt.show()
+
+    # http://stackoverflow.com/questions/1560424/how-can-i-get-the-x-y-values-of-the-line-that-is-ploted-by-a-contour-plot-mat
+    # http://stackoverflow.com/questions/5666056/matplotlib-extracting-data-from-contour-lines
+
+
+     # from http://stackoverflow.com/questions/29434533/edge-detection-for-image-stored-in-matrix
+    thresh1 = 1
+    thresh2 = 2
+
+    #Load image
+    # im = sp.misc.imread('jBD9j.png')
+
+    im = image_save
+    #Get threashold mask for different regions
+    gryim = np.mean(im[:,:,0:2],2)
+    region1 =  (thresh1 < gryim)
+    region2 =  (thresh2 < gryim)
+    nregion1 = ~ region1
+    nregion2 = ~ region2
+
+    #Plot figure and two regions
+    fig, axs = plt.subplots(2,2)
+    axs[0,0].imshow(im)
+    axs[0,1].imshow(region1)
+    axs[1,0].imshow(region2)
+
+    #Clean up any holes, etc (not needed for simple figures here)
+    #region1 = sp.ndimage.morphology.binary_closing(region1)
+    #region1 = sp.ndimage.morphology.binary_fill_holes(region1)
+    #region1.astype('bool')
+    #region2 = sp.ndimage.morphology.binary_closing(region2)
+    #region2 = sp.ndimage.morphology.binary_fill_holes(region2)
+    #region2.astype('bool')
+
+    #Get location of edge by comparing array to it's
+    #inverse shifted by a few pixels
+    shift = -2
+    edgex1 = (region1 ^ np.roll(nregion1,shift=shift,axis=0))
+    edgey1 = (region1 ^ np.roll(nregion1,shift=shift,axis=1))
+    edgex2 = (region2 ^ np.roll(nregion2,shift=shift,axis=0))
+    edgey2 = (region2 ^ np.roll(nregion2,shift=shift,axis=1))
+
+    #Plot location of edge over image
+    axs[1,1].imshow(im)
+    axs[1,1].contour(edgex1,2,colors='r',lw=2.)
+    axs[1,1].contour(edgey1,2,colors='r',lw=2.)
+    axs[1,1].contour(edgex2,2,colors='g',lw=2.)
+    axs[1,1].contour(edgey2,2,colors='g',lw=2.)
+
+
+
+
 def explore_wise2des(data=None):
     """
 
@@ -765,18 +1029,30 @@ def explore_wise2des(data=None):
 
 if __name__ == "__main__":
 
+    """
+
+   function_name = inspect.stack()[0][3]
+   lineno = str(inspect.stack()[0][2])
 
     # plot_compass_arrow(direction='NS', length=2.0)
     # key=raw_input("Enter any key to continue: ")
 
-
-    from argparse import ArgumentParser
+    """
+    import argparse
 
     import configparser
+
+    from matplotlib import pyplot as plt
+
     config = configparser.RawConfigParser()
     config.read('VDESJ2325-5229_analysis.cfg')
 
-    parser = ArgumentParser()
+    description = ''
+    epilog = ''
+    parser =  argparse.ArgumentParser(
+        description=description, epilog=epilog,
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
 
     format_default = 'COADD'
     parser.add_argument("--format", default=format_default,
@@ -806,13 +1082,28 @@ if __name__ == "__main__":
     parser.add_argument("--list", action='store_true',
         dest='list', help="list the lenses")
 
-    parser.set_defaults(showplots=False)
-    parser.add_argument("--showplots", action='store_true',
-        dest='showplots', help="showplots option")
+    parser.add_argument("--plotimages", action='store_true',
+        default=False, help="plot images option")
+
+    parser.add_argument("--showplots", action='store_true', default=False,
+                        help="showplots option")
+
+    # 38 pixels is 10 aecsec in DES Y1A1 image with
+    # pixel size 0.267 arcsec/pixel
+    parser.add_argument("--size_pixels", type=int, default=38,
+                        help="Size in pixels")
+
+    parser.add_argument("--edgedetection", action='store_true',
+        default=False, help="Segmentation map edge detection  option")
 
     parser.set_defaults(verbose=False)
     parser.add_argument("--verbose", action='store_true',
         dest='verbose', help="verbose option")
+
+    parser.set_defaults(verbose=False)
+    parser.add_argument("--zoom", action='store_true',
+                        default=False, help="zoom option")
+
 
     parser.set_defaults(xkcd=False)
     parser.add_argument("--xkcd", action='store_true',
@@ -831,6 +1122,8 @@ if __name__ == "__main__":
     format = args.format
     print('format: ', format)
 
+    plotimages = args.plotimages
+
     release = args.release
     print('release: ', release)
 
@@ -843,6 +1136,9 @@ if __name__ == "__main__":
     verbose = args.verbose
     print('verbose: ', verbose)
 
+    zoom = args.zoom
+    print('zoom: ', zoom)
+
     if args.xkcd: plt.xkcd()
 
     if args.list:
@@ -852,17 +1148,23 @@ if __name__ == "__main__":
     # debug the list of lenses in the config file
     list_lenses()
 
+    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
     key=raw_input("Enter any key to continue: ")
 
     # cutout size in arc seconds
-    cutout=True
     size_cutout = 30.0
 
-    zoom = True
     # zoom size for ra, dec plots in arc seconds
     size_zoom = 6.0
     size_zoom = 10.0
     #size_zoom = 15.0
+
+    size = 100
+    size = 38
+    size= args.size_pixels
+
+    xrange=[-size/2.0, size/2.0]
+    yrange=[-size/2.0, size/2.0]
 
     # colours to use for grizY plots
     colors=['blue','green','orange','red', 'maroon']
@@ -914,15 +1216,17 @@ if __name__ == "__main__":
 
     filename_COADD = RELEASE + '_COADD_OBJECTS_' + source + '.fits'
 
-    filename_SingleEpoch ='Y1A1_SE_' + source + '.fits'
+    filename_SingleEpoch = config.get(source,'filename_se')
+    # filename_SingleEpoch ='Y1A1_SE_' + source + '.fits'
 
     # ra =   ra + (1.0/3600.0)
     # dec =  dec - (1.0/3600.0)
 
     # from DES database
-    filename_SingleEpoch = 'Y1A1_FINALCUT_VDES2325-5229.fits'
-    filename_SingleEpoch = 'VDESJ2325-5229_Y1A1_SingleEpochFinalCut.fits'
+    # filename_SingleEpoch = 'Y1A1_FINALCUT_VDES2325-5229.fits'
+    # filename_SingleEpoch = 'VDESJ2325-5229_Y1A1_SingleEpochFinalCut.fits'
 
+    print('filename_SingleEpoch:', filename_SingleEpoch)
     print('TILENAME: ', TILENAME)
 
     # create rectanglar limits for box +-30" and the SQL fragment
@@ -931,7 +1235,10 @@ if __name__ == "__main__":
     # convert height in arcsecsonds to decimal degrees and define RA limits
     # for central dec which is OK for small offsets
     # add a litte for margin
-    radec_size = 60.0 + 1.0
+    radec_size = 60.0
+    # add a 1" margin
+    radec_size = radec_size + 1.0
+
     print('radec_size: ', radec_size)
 
     delta_dec = radec_size/ 3600.0
@@ -959,6 +1266,10 @@ if __name__ == "__main__":
           " AND " + "{0:.5f}".format(dec_max) + ")\n")
 
 
+    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
+    print('format:', format)
+    key=raw_input("Enter any key to continue: ")
+
     if format == 'SE':
         infile = datapath + filename_SingleEpoch
 
@@ -973,20 +1284,70 @@ if __name__ == "__main__":
         catfile = infile
 
     print('infile: ', infile)
+    table = Table.read(infile)
+    table.info('stats')
+    imagename_unique, indices = np.unique(table['IMAGENAME'],
+                                          return_index=True)
+    for irow, index in enumerate(indices):
+        print(irow+1,
+              table['BAND'][index].strip(),
+              table['FWHM'][index],
+              table['ZEROPOINT'][index],
+              table['IMAGEPATH'][index].strip())
+
+    for irow, index in enumerate(indices):
+        print(irow+1,
+              table['BAND'][index].strip(),
+              table['FWHM'][index],
+              table['ZEROPOINT'][index],
+              table['IMAGENAME'][index].strip())
+
+    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
+    key = raw_input("Enter any key to continue to edge detector: ")
 
     inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
     print('inpath: ', inpath)
 
+    print('args.edgedetection:', args.edgedetection)
+    if args.edgedetection:
+
+        ext = 1
+        fzformat = True
+
+        segmapname = TILENAME + '_' + BAND + '_seg.fits'
+        if fzformat: segmapname = segmapname + '.fz'
+        segmapfile = inpath + '/segmap/' + segmapname
+
+        plotfile_suffix = BAND + '_' + str(size)
+        plotfile_prefix = source
+        suptitle = segmapname
+        title = source
+
+        wcs_image=get_wcs(segmapfile, verbose=True, debug=debug)
+        xpix, ypix = wcs_image.wcs_world2pix(ra_source, dec_source, 1)
+        print('RA, Dec, X, Y: ', ra_source, dec_source, xpix, ypix)
+
+        key = raw_input("Enter any key to continue to edge detector: ")
+
+        segmap = get_cutout(infile=segmapfile, ext=ext,
+            title=title, suptitle=suptitle,
+            position=(xpix, ypix), format='pixels', segmap=True,
+            size=size, plot=True, saveplot=True,
+            plotfile_prefix=plotfile_prefix,
+            plotfile_suffix=plotfile_suffix,
+            verbose=False, debug=debug)
+
+        print(len(segmap), segmap.shape, len(segmap.shape), segmap.size)
+        edgedetection(im=segmap)
+
+
     if format.upper() != 'WISE2DES':
         catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
 
-    print('Read catfile: ', catfile)
-    catdata = Table.read(catfile)
-    print(catdata.colnames)
-    catdata.info('stats')
-
-
-    plotimages = False
+    # print('Read catfile: ', catfile)
+    # catdata = Table.read(catfile)
+    # print(catdata.colnames)
+    # catdata.info('stats')
 
     if plotimages:
         # fz format
@@ -1012,9 +1373,6 @@ if __name__ == "__main__":
         suptitle = filename
         title = source
 
-        size = 100
-        size = 38
-
         plotfile_suffix = BAND + '_' + str(size)
         get_cutout(infile = imagefile, ext=1,
             title=title, suptitle=suptitle,
@@ -1036,13 +1394,17 @@ if __name__ == "__main__":
 
 
         ext=1
-        get_cutout(infile = segmapfile, ext=ext,
+        segmap = get_cutout(infile = segmapfile, ext=ext,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels', segmap=True,
             size=size, plot=True, saveplot=True,
             plotfile_prefix=plotfile_prefix,
             plotfile_suffix=plotfile_suffix,
             verbose=False, debug=debug)
+
+
+        key=raw_input("Enter any key to continue to edge detector: ")
+
 
         key=raw_input("Enter any key to continue: ")
 
@@ -1055,11 +1417,9 @@ if __name__ == "__main__":
 
     WAVEBANDS = ['G','R','I','Z','Y']
 
-    zoom = True
     if zoom:
         xrange=[-size_zoom/2.0, size_zoom/2.0]
         yrange=[-size_zoom/2.0, size_zoom/2.0]
-
 
     if format == 'SE':
 
@@ -1208,20 +1568,32 @@ if __name__ == "__main__":
             np.unique(data['CATALOGID'], return_index=True)
 
         print('Number of unique CATALOGIDs: ', len(CATALOGID_unique))
+
+        IMAGENAME_unique, indices = \
+            np.unique(data['IMAGENAME'], return_index=True)
+        print('Number of unique IMAGENAMEs: ', len(IMAGENAME_unique))
+
         key=raw_input("\nEnter any key to continue: ")
 
         index = 0
         iplot = 0
+        nplots = len(CATALOGID_unique)
+        nrows = int(np.sqrt(ndata)) + 1
+        ncols = int(np.sqrt(ndata)) + 1
+        xrange = (-5.0, 5.0)
+        yrange = (-5.0, 5.0)
+
         for CATALOGID in CATALOGID_unique:
             index = index + 1
             iplot = iplot + 1
-            plt.subplot(3, 3, iplot)
+            plt.subplot(nrows, ncols, iplot)
 
             idata = (data['CATALOGID'] == CATALOGID)
 
             ra = data['ALPHAWIN_J2000'][idata]
             dec = data['DELTAWIN_J2000'][idata]
             WAVEBAND = data['BAND'][idata]
+            IMAGENAME = data['IMAGENAME'][idata]
 
             print(len(ra))
 
@@ -1241,6 +1613,10 @@ if __name__ == "__main__":
             WAVEBAND = WAVEBAND[itest][0].upper()
             WAVEBAND = WAVEBAND.strip()
 
+            IMAGENAME = IMAGENAME[itest][0]
+            IMAGENAME = IMAGENAME.strip()
+            IMAGENAME = os.path.splitext(IMAGENAME)[0]
+
             print(np.min(xdata), np.max(xdata))
             print(np.min(ydata), np.max(ydata))
 
@@ -1253,9 +1629,13 @@ if __name__ == "__main__":
 
             #plt.legend(numpoints=0)
             WAVEBAND=WAVEBAND.strip()
-            title = str(CATALOGID) + ' ' + WAVEBAND
+            # title = str(CATALOGID) + ' ' + WAVEBAND
+            title = str(IMAGENAME) + ':' + WAVEBAND
             plt.title(title, fontsize='small')
             plt.suptitle(source, fontsize='medium')
+            plt.xlim(xrange)
+            plt.ylim(yrange)
+
 
             #plt.text(0.5,0.5,'plt.text; Hello World',
             #    transform=plt.gca().transAxes)
@@ -1274,7 +1654,7 @@ if __name__ == "__main__":
                 plt.xlim(xrange)
                 plt.ylim(yrange)
 
-
+        plotid()
         plotfile = source + '_multi_SingleEpoch_radec_zoom.png'
         plt.savefig(plotfile)
         #plt.clf()
@@ -1304,6 +1684,8 @@ if __name__ == "__main__":
         xdata= delta_ra
         ydata= delta_dec
 
+        print(xrange)
+        print(yrange)
         itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
                 (ydata > yrange[0]) & (ydata < yrange[1])
 

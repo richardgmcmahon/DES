@@ -9,8 +9,8 @@ import matplotlib.pyplot as plt
 from astropy.table import Table
 
 sys.path.append('/home/rgm/soft/python/lib/')
-from librgm import plotid
-
+from librgm.plotid import plotid
+from librgm.plot_radec import plot_radec
 
 def flags_stats(table):
     """
@@ -151,7 +151,7 @@ def flags_stats(table):
     plt.ylabel('Number')
     plt.title(filename)
     plt.legend(fontsize="medium")
-    plotid.plotid()
+    plotid()
     plt.show()
 
     itest = ((table['DES gFlag'] == 0) | (table['DES rFlag'] == 0) |
