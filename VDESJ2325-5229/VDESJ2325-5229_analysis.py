@@ -10,7 +10,7 @@ also look at desdb for downloading on the fly option
 see http://docs.astropy.org/en/stable/coordinates/matchsep.htm
 
 TODO: go from COADD source to Single Epoch source and the
-chip in the FINALCUT SE Image and Chip it comes from.
+chip it FINALCUT Image and Chip it comes from.
 
 https://opensource.ncsa.illinois.edu/confluence/display/DESDM/Y1A1+release+notes
 
@@ -42,7 +42,6 @@ from __future__ import (print_function, division)
 import os
 import sys
 import time
-import inspect
 
 import numpy as np
 from numpy import ma
@@ -504,12 +503,13 @@ def get_cutout(infile=None, data=None, ext=1, header=None,
     print('median: ', median)
 
     if segmap:
+        # determine the list of unique sources in the segmentation image
         unique_sources = np.unique(data)
         nsources = len(unique_sources)
         print('Number of unique segmented sources: ', nsources)
         print(unique_sources)
         isource = 1
-        # skip the first with value = zero which isbackground
+        # skip the first with value = zero which is background
         for unique_source in unique_sources[1:]:
             isource = isource + 1
             print(isource, unique_source)
@@ -603,12 +603,6 @@ def get_cutout(infile=None, data=None, ext=1, header=None,
         plt.show()
 
     return cutout.data
-
-
-def plot_cutout():
-
-
-    return
 
 
 def wcs_PixelScale(AstWCS, x, y, debug=False):
@@ -1029,15 +1023,11 @@ def explore_wise2des(data=None):
 
 if __name__ == "__main__":
 
-    """
-
-   function_name = inspect.stack()[0][3]
-   lineno = str(inspect.stack()[0][2])
 
     # plot_compass_arrow(direction='NS', length=2.0)
     # key=raw_input("Enter any key to continue: ")
 
-    """
+
     import argparse
 
     import configparser
@@ -1148,7 +1138,6 @@ if __name__ == "__main__":
     # debug the list of lenses in the config file
     list_lenses()
 
-    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
     key=raw_input("Enter any key to continue: ")
 
     # cutout size in arc seconds
@@ -1266,10 +1255,6 @@ if __name__ == "__main__":
           " AND " + "{0:.5f}".format(dec_max) + ")\n")
 
 
-    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
-    print('format:', format)
-    key=raw_input("Enter any key to continue: ")
-
     if format == 'SE':
         infile = datapath + filename_SingleEpoch
 
@@ -1284,29 +1269,10 @@ if __name__ == "__main__":
         catfile = infile
 
     print('infile: ', infile)
-    table = Table.read(infile)
-    table.info('stats')
-    imagename_unique, indices = np.unique(table['IMAGENAME'],
-                                          return_index=True)
-    for irow, index in enumerate(indices):
-        print(irow+1,
-              table['BAND'][index].strip(),
-              table['FWHM'][index],
-              table['ZEROPOINT'][index],
-              table['IMAGEPATH'][index].strip())
-
-    for irow, index in enumerate(indices):
-        print(irow+1,
-              table['BAND'][index].strip(),
-              table['FWHM'][index],
-              table['ZEROPOINT'][index],
-              table['IMAGENAME'][index].strip())
-
-    print('Line number:', str(inspect.stack()[0][2]), inspect.stack()[0][3])
-    key = raw_input("Enter any key to continue to edge detector: ")
 
     inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
     print('inpath: ', inpath)
+
 
     print('args.edgedetection:', args.edgedetection)
     if args.edgedetection:
@@ -1344,10 +1310,10 @@ if __name__ == "__main__":
     if format.upper() != 'WISE2DES':
         catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
 
-    # print('Read catfile: ', catfile)
-    # catdata = Table.read(catfile)
-    # print(catdata.colnames)
-    # catdata.info('stats')
+    print('Read catfile: ', catfile)
+    catdata = Table.read(catfile)
+    print(catdata.colnames)
+    catdata.info('stats')
 
     if plotimages:
         # fz format
@@ -1568,32 +1534,20 @@ if __name__ == "__main__":
             np.unique(data['CATALOGID'], return_index=True)
 
         print('Number of unique CATALOGIDs: ', len(CATALOGID_unique))
-
-        IMAGENAME_unique, indices = \
-            np.unique(data['IMAGENAME'], return_index=True)
-        print('Number of unique IMAGENAMEs: ', len(IMAGENAME_unique))
-
         key=raw_input("\nEnter any key to continue: ")
 
         index = 0
         iplot = 0
-        nplots = len(CATALOGID_unique)
-        nrows = int(np.sqrt(ndata)) + 1
-        ncols = int(np.sqrt(ndata)) + 1
-        xrange = (-5.0, 5.0)
-        yrange = (-5.0, 5.0)
-
         for CATALOGID in CATALOGID_unique:
             index = index + 1
             iplot = iplot + 1
-            plt.subplot(nrows, ncols, iplot)
+            plt.subplot(3, 3, iplot)
 
             idata = (data['CATALOGID'] == CATALOGID)
 
             ra = data['ALPHAWIN_J2000'][idata]
             dec = data['DELTAWIN_J2000'][idata]
             WAVEBAND = data['BAND'][idata]
-            IMAGENAME = data['IMAGENAME'][idata]
 
             print(len(ra))
 
@@ -1613,10 +1567,6 @@ if __name__ == "__main__":
             WAVEBAND = WAVEBAND[itest][0].upper()
             WAVEBAND = WAVEBAND.strip()
 
-            IMAGENAME = IMAGENAME[itest][0]
-            IMAGENAME = IMAGENAME.strip()
-            IMAGENAME = os.path.splitext(IMAGENAME)[0]
-
             print(np.min(xdata), np.max(xdata))
             print(np.min(ydata), np.max(ydata))
 
@@ -1629,13 +1579,9 @@ if __name__ == "__main__":
 
             #plt.legend(numpoints=0)
             WAVEBAND=WAVEBAND.strip()
-            # title = str(CATALOGID) + ' ' + WAVEBAND
-            title = str(IMAGENAME) + ':' + WAVEBAND
+            title = str(CATALOGID) + ' ' + WAVEBAND
             plt.title(title, fontsize='small')
             plt.suptitle(source, fontsize='medium')
-            plt.xlim(xrange)
-            plt.ylim(yrange)
-
 
             #plt.text(0.5,0.5,'plt.text; Hello World',
             #    transform=plt.gca().transAxes)
@@ -1654,7 +1600,7 @@ if __name__ == "__main__":
                 plt.xlim(xrange)
                 plt.ylim(yrange)
 
-        plotid()
+
         plotfile = source + '_multi_SingleEpoch_radec_zoom.png'
         plt.savefig(plotfile)
         #plt.clf()

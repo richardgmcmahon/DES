@@ -15,6 +15,8 @@ import os
 import sys
 import time
 
+import numpy as np
+
 from astropy.io import fits
 from astropy import wcs
 
