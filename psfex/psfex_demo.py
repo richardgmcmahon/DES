@@ -33,7 +33,7 @@ print('numpy: ', np.__version__)
 
 import scipy
 print('scipy: ', scipy.__version__)
-from scipy.ndimage import interpolation 
+from scipy.ndimage import interpolation
 
 import astropy
 print('astropy: ', astropy.__version__)
@@ -81,11 +81,11 @@ def psfex_galsim_compare(psfex_file=None, xpix=None, ypix=None):
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
-  plotfile='psfex_demo_psfex_galsim_compare_psfex.png'
+  plotfile = psfex_file + '_psfex_demo_psfex_galsim_compare_psfex.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -97,27 +97,27 @@ def psfex_galsim_compare(psfex_file=None, xpix=None, ypix=None):
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
-  plotfile='psfex_demo_psfex_galsim_compare_galsim.png'
+  plotfile = psfex_file + '_psfex_demo_psfex_galsim_compare_galsim.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
 
-  plt.figure(figsize=(10.0, 8.0))  
+  plt.figure(figsize=(10.0, 8.0))
   plt.imshow(psf_galsim-psf_psfex, interpolation='none')
   plt.colorbar()
   plt.ylabel('Pixels')
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
-  plotfile='psfex_demo_psfex_galsim_compare_difference.png'
+  plotfile = psfex_file + '_psfex_demo_psfex_galsim_compare_difference.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -150,10 +150,10 @@ def rd_psf(infile=None, verbose=False, pause=False):
 
   # cycle through and plot each base function
   nbases=6
-  for ibase in range(0,6): 
+  for ibase in range(0,6):
     #psf_mask.shape:  (1, 6, 25, 25)
     # slice out a single PCA component
-    # The polynomial engine of PSFEx is the same as the one implemented 
+    # The polynomial engine of PSFEx is the same as the one implemented
     # the SCAMP software (Bertin 2006)
     image=psf_mask[0,ibase,:,:]
     if pause: raw_input('Type any key to continue> ')
@@ -162,7 +162,7 @@ def rd_psf(infile=None, verbose=False, pause=False):
 
     data_min=min(image.flat)
     data_max=max(image.flat)
-  
+
     median=np.median(image.flat)
     print('median: ', median)
 
@@ -190,7 +190,7 @@ def rd_psf(infile=None, verbose=False, pause=False):
     plt.ylabel('Pixels')
     plt.xlabel('Pixels')
 
-    title= filename_image 
+    title= filename_image
 
     title= RELEASE+ ': ' + filename_image + ' PSFEx base function: ' + str(ibase)
 
@@ -198,7 +198,7 @@ def rd_psf(infile=None, verbose=False, pause=False):
     #rgm.plotid()
 
 
-    plotfile='psfex_demo_base_function_'+ str(ibase) + '.png'
+    plotfile = infile + '_psfex_demo_base_function_'+ str(ibase) + '.png'
     print('Saving: ', plotfile)
     plt.savefig(plotfile)
 
@@ -235,8 +235,8 @@ def rd_psf(infile=None, verbose=False, pause=False):
   print('xpix, ypix: ', xpix, ypix)
   print('xpsf, ypsf: ', xpsf, ypsf)
 
-  # create model psf from base functions 
-  # cst + x + x^2 + y + xy + y^2 
+  # create model psf from base functions
+  # cst + x + x^2 + y + xy + y^2
   psf = \
    psf_mask[0,0,:,:] + \
    (xpsf * psf_mask[0,1,:,:]) + \
@@ -244,7 +244,7 @@ def rd_psf(infile=None, verbose=False, pause=False):
    (ypsf * psf_mask[0,3,:,:]) + \
    (xpsf*ypsf * psf_mask[0,4,:,:]) + \
    (ypsf*ypsf * psf_mask[0,5,:,:])
-     
+
   #print(psf)
 
   zoom_psf=True
@@ -255,7 +255,7 @@ def rd_psf(infile=None, verbose=False, pause=False):
     print('zoomed_psf.shape: ', zoomed_psf.shape)
     #psf=zoomed_psf[1:-1,1:-1]
     psf=zoomed_psf
- 
+
   plt.figure(figsize=(10.0, 8.0))
 
   plt.imshow(psf, interpolation='none')
@@ -264,12 +264,12 @@ def rd_psf(infile=None, verbose=False, pause=False):
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
   print('total flux in psf: ', np.sum(psf.flat))
-  plotfile='psfex_demo_psf_1.png'
+  plotfile = filename_image + '_psfex_demo_psf_1.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -281,12 +281,12 @@ def rd_psf(infile=None, verbose=False, pause=False):
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
   print('total flux in psf_pex: ', np.sum(psf_pex.flat))
-  plotfile='psfex_demo_psf_2.png'
+  plotfile = filename_image + '_psfex_demo_psf_2.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -299,23 +299,24 @@ def rd_psf(infile=None, verbose=False, pause=False):
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(xpix) + "{0:8.1f}".format(ypix)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
-  plotfile='psfex_demo_psf_1_2.png'
-  if zoom_psf: plotfile='psfex_demo_psf_1_2_zoomed.png'
+  plotfile = filename_image + '_psfex_demo_psf_1_2.png'
+  if zoom_psf:
+      plotfile = filename_image + 'psfex_demo_psf_1_2_zoomed.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
   data=psf
 
-  plotfile='psfex_demo_radial_profile_psf.png'
+  plotfile = filename_image + '_psfex_demo_radial_profile_psf.png'
   center=[12.0,12.0]
   radial_profile(data, center, sigma=None, plotfile=plotfile)
 
   data=psf_pex
-  plotfile='psfex_demo_radial_profile_psf_pex.png'
+  plotfile = filename_image + '_psfex_demo_radial_profile_psf_pex.png'
   center=[12.0,12.0]
   radial_profile(data, center, sigma=None, plotfile=plotfile)
 
@@ -335,11 +336,11 @@ def radial_profile(data, center, sigma=None, plotfile=None):
     y,x = np.indices((data.shape)) # first determine radii of all pixels
     print(min(x.flat), max(x.flat))
     print(min(y.flat), max(y.flat))
-    r = np.sqrt((x-center[0])**2+(y-center[1])**2)    
+    r = np.sqrt((x-center[0])**2+(y-center[1])**2)
     print(min(r.flat), max(r.flat))
 
     # radius of the image.
-    r_max = np.max(r)  
+    r_max = np.max(r)
 
     #ring_brightness, radius = np.histogram(r, weights=data, bins=r_max)
     #plt.plot(radius[1:], ring_brightness)
@@ -362,10 +363,10 @@ def radial_profile(data, center, sigma=None, plotfile=None):
 
     plt.plot(r, data, 'k.')
     plt.xlim(0.0,12.5)
-    plt.xlabel('radius (pixels)')  
+    plt.xlabel('radius (pixels)')
 
     #gaussian = norm(loc = -1., scale = 1.0)
-  
+
     pdf=False
     if pdf:
       xmin=0
@@ -380,7 +381,8 @@ def radial_profile(data, center, sigma=None, plotfile=None):
       cdf = np.cumsum(pdf*dx)
       plt.plot(x,cdf)
 
-    if plotfile is None: plotfile='psfex_demo_radial_profile.png'
+    if plotfile is None:
+        plotfile='psfex_demo_radial_profile.png'
     print('Saving: ', plotfile)
     plt.savefig(plotfile)
 
@@ -417,7 +419,7 @@ def check_data(pause=True):
 
   if pause: raw_input('Type any key to continue> ')
 
-  # read the data 
+  # read the data
   data=hdulist[2].data
   cols = data.columns
   print(cols.info)
@@ -460,12 +462,12 @@ def check_data(pause=True):
   plt.legend()
 
 
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
 
   #rgm.plotid()
 
-  plotfile='psfex_demo_flux_radius_v_mag_aper.png'
+  plotfile = filename_image + '_psfex_demo_flux_radius_v_mag_aper.png'
 
   plt.savefig(plotfile)
 
@@ -497,7 +499,7 @@ def run_demo():
       y0=y0+25
       print(x, y, x0, y0)
       image[x0:x0+25,y0:y0+25] = pex.get_rec(x, y)
-     
+
   plt.figure(figsize=(10.0, 8.0))
 
   print(sum(image.flat))
@@ -509,13 +511,13 @@ def run_demo():
 
   title= filename_image + ': ' + "{0:8.1f}".format(x) + "{0:8.1f}".format(y)
 
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
 
   plt.title(title)
   #rgm.plotid()
 
 
-  plotfile='psfex_demo_image_psf.png'
+  plotfile = filename_image + 'psfex_demo_image_psf.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -536,11 +538,11 @@ def run_demo():
   plt.xlabel('Pixels')
 
   title= filename_image + ': ' + "{0:8.1f}".format(x) + "{0:8.1f}".format(y)
-  title= RELEASE+ ': ' + filename_image 
+  title= RELEASE+ ': ' + filename_image
   plt.title(title)
   #rgm.plotid()
 
-  plotfile='psfex_demo_image_psf_residuals.png'
+  plotfile = filename_image + 'psfex_demo_image_psf_residuals.png'
   print('Saving: ', plotfile)
   plt.savefig(plotfile)
 
@@ -558,9 +560,9 @@ if __name__ == '__main__':
 
     TILE='DES0449-4706'
     datapath='/data/desardata/SVA1/' + TILE + '/'
-  
 
-    filename_psf= TILE + '_i_psfcat.psf' 
+
+    filename_psf= TILE + '_i_psfcat.psf'
     infile_psf=datapath + filename_psf
 
     filename_image= TILE+ '_i.fits.fz'
@@ -600,5 +602,3 @@ if __name__ == '__main__':
         radial_profile(psf,center=center,sigma=sigma)
 
         debug=False
-  
-

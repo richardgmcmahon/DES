@@ -15,11 +15,15 @@ module load psfex/3.17.1
 
 module list
 
+setup -v sextractor 2.23.0+0
+
 RUN_SEXTRACTOR=true
-RUN_PSFEX=true
+RUN_PSFEX=false
 
 RELEASE=SVA1
 RELEASE=Y1A1
+
+echo RELEASE: ${RELEASE}
 
 for WAVEBAND in g i
 #for WAVEBAND in g r i z Y
@@ -37,11 +41,10 @@ do
 
 DATAPATH_IN=/data/desardata/PSFEX/${RELEASE}/${TILE}/
 DATAPATH_OUT=/data/desardata/PSFEX/${RELEASE}/${TILE}/R1
+DATAPATH_OUT=/data/desardata/PSFEX/${RELEASE}/${TILE}/R2
 
-mkdir ${DATAPATH_OUT}
 
-if [ -d ${DATAPATH_OUT} ]
-then
+if [ ! -d ${DATAPATH_OUT} ]; then
     echo  ${DATAPATH_OUT} "does not exist; creating " ${DATAPATH_OUT}
     mkdir ${DATAPATH_OUT}
     echo 
@@ -54,17 +57,17 @@ WEIGHTMAP=${INFILE}[2]
 # check is a .fits file or .fits.fz file exists
 if [ -f $INFILE ];
 then
-   echo "File $FILE exists."
+   echo "File $INFILE exists."
 else
-   echo "File $FILE does not exist."
+   echo "File $INFILE does not exist."
    if [ -f $INFILE.fz ];
-   echo "File $FILE exists."
+   echo "File $INFILE exists."
    then
-      echo "File $FILE.fz exists."
+      echo "File $INFILE.fz exists."
       #funpack $INFILE.fz 
       imcopy $INFILE.fz  $INFILE
    else
-      echo "File $FILE.fz does not exist."
+      echo "File $INFILE.fz does not exist."
    fi
 fi
 
@@ -88,8 +91,7 @@ now=$(date '+%s')
 echo "Elapsed time (secs) : " $((now - time0))
 echo 'Sextractor starting'
 
-sex ${IMAGE} -c default.sex -CATALOG_NAME ${OUTFILE} -CATALOG_TYPE FITS_LDAC -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE ${WEIGHTMAP} -PARAMETERS_NAME sex.param_psfex  -FILTER_NAME sex.conv -STARNNW_NAME sex.nnw  -SATUR_LEVEL 65000 -DETECT_MINAREA 3 
-
+sex ${IMAGE} -c default.sex -CATALOG_NAME ${OUTFILE} -CATALOG_TYPE FITS_LDAC -WEIGHT_TYPE MAP_WEIGHT -WEIGHT_IMAGE ${WEIGHTMAP} -PARAMETERS_NAME sex.param_psfex  -FILTER_NAME sex.conv -STARNNW_NAME sex.nnw  -SATUR_LEVEL 65000 -DETECT_MINAREA 3 -CHECKIMAGE_TYPE -OBJECTS,BACKGROUND -CHECKIMAGE_NAME ${DATAPATH_OUT}/obj.fits,${DATAPATH_OUT}/bck.fits 
 echo 'Sextractor completed'
 now=$(date '+%s')
 etime=$((now - time0))
