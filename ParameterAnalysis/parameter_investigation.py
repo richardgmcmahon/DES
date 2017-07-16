@@ -1,6 +1,96 @@
 from __future__ import (print_function, division)
 
+
+"""
+
+Analysis of image catalogue parameters from:
+
+DES
+VHS
+PS1
+SDSS
+DECALS
+
+LSST
+
+
+Compare and contrast the try to homogenise
+
+Other survey
+
+DESDM file name data model
+DES2327-5248_'WAVEBAND'_cat.fits where WAVEBAND = ['g', 'r', 'i', 'z', 'Y']
+
+
+Could split them into categories:
+
+Y1A1:
+
+could add UCDs to DES etc to help!
+
+(i)  centroid measurements
+
+8: [ALPHA, DELTA][MODEL, PEAK, PSF, WIN]_J2000
+
+
+(ii) size and shape measurement
+
+4: [A, B]MODEL_[IMAGE, WORLD]
+4: ERR[A, B]MODEL_[IMAGE, WORLD]
+
+2: [A,B]WIN_IMAGE  [no WORLD, check Y3 etc] ********
+4: ERR[A,B]WIN_[IMAGE, WORLD]
+
+ERRX2WIN_IMAGE
+
+4: [A, B]_[IMAGE, WORLD]
+
+
+2: DISK_ASPECT_[IMAGE, WORLD]
+2: DISK_ASPECTERR_[IMAGE, WORLD]
+
+2: DISK_SCALE_[IMAGE, WORLD]
+2: DISK_SCALEERR_[IMAGE, WORLD]
+
+2: DISK_THETA_[IMAGE, WORLD]
+2: DISK_THETAERR_[IMAGE, WORLD]
+
+ERRTHETA_IMAGE
+ERRTHETA[MODEL, PSF, WIN]_[IMAGE, J2000] *** CHECK ID WORLD AND J2000 ARE SAME
+
+
+
+ELLIP[1, 2]MODEL_[IMAGE, WORLD]
+
+(iii)   flux measurements
+
+BACKGROUND
+
+
+
+(iv)  flux distribution measures
+
+CHI2_DETMODEL
+CHI2_MODEL
+CHI2_PSF
+
+(v) Other
+
+CLASS_STAR
+
+
+
+"""
+
+
+import os
 import sys
+import time
+from time import strftime
+from time import gmtime
+
+import traceback
+import inspect
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -9,24 +99,36 @@ from astropy.table import Table
 import astropy.io.fits as fits
 import astropy.io.fits.compression
 
+
 sys.path.append('/home/rgm/soft/python/lib/')
 sys.path.append('/home/rgm/soft/sreed/')
+
+from librgm.plotid import plotid
+
+
 # /Users/rgm/soft/sreed/Possibles_Analysis.py
 import Possibles_Analysis as PA
-import plotid
 import stats
 from match_lists import match_lists as ml
 
+help(plotid)
+
 
 def make_hist(xs, col, units, comment, band, file_start, out_path,
+              infile=None,
               zoom=False, save=True):
-    """ make histogram plots """
+    """
+
+    make EDA univariate histogram plots
+
+    """
 
     fig = plt.figure()
     ids = np.where((xs == xs))[0]
     xs = xs[ids]
     pers = np.percentile(xs, [1.0, 99.0])
     keeps = np.where((xs < pers[1]) & (xs > pers[0]))[0]
+
     if zoom and len(keeps) > 1:
         xs1 = xs[keeps]
         nper = len(xs1)
@@ -58,32 +160,66 @@ def make_hist(xs, col, units, comment, band, file_start, out_path,
     print(col, file_start, band)
     fig.suptitle(col + " " + file_start + band)
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2, wspace=0.0)
-    plotid.plotid()
+    plotid()
     fig = plt.gcf()
     fig.set_size_inches(10.0, 8.0)
+
+    plotid()
     if save:
-        plt.savefig(out_path + col + "_" + file_start + band + ".png")
+        basename=os.path.basename(infile)
+        figfile = out_path + '/' + basename + '_hist_' + col + ".png"
+        print('Saving:', figfile)
+        plt.savefig(figfile)
         plt.close()
     else:
         plt.show()
 
 
 def histograms(dir, file_start, file_end, cols, bands, out_path,
-               zoom=False, save=True):
+               table=None, zoom=False, save=True):
+    """
+
+    DES2327-5248_'WAVEBAND'_cat.fits where WAVEBAND = ['g', 'r', 'i', 'z', 'Y']
+
+
+    Example figfile: DES2327-5248_g_cat_COLUMN.png
+
+
+    """
+    print('dir:', dir)
+    print('file_start:', file_start)
+    print('file_end:', file_end)
 
     for band in bands:
-        t = Table.read(dir + file_start + band + file_end)
-        hdr = fits.open(dir + file_start + band + file_end)
+        print('band:', band)
+        filename = file_start + band + file_end
+        infile = dir + '/' + filename
+        basename=os.path.basename(infile)
 
-        for col in cols:
+        print('infile:', infile)
+        print('basename:', basename)
+        print('filename:', filename)
+
+        t = Table.read(infile)
+        hdr = fits.open(infile)
+
+        for (icol, col) in enumerate(cols):
             column_list = list(t.columns)
-            print(col, band)
+            print(icol, col, band)
 
             if "-" not in col:
                 xs = np.array(t[col], dtype=np.float64)
-                units = str(t[col].units)
+                units = ''
+                try:
+                    units = str(t[col].units)
+                except:
+                    pass
+
+                print(icol, col, units)
+
                 i = column_list.index(col) + 1
                 comment = "(" + hdr[1].header.comments["TTYPE" + str(i)] + ")"
+                # loop through columns with >1 dimensions
                 if len(xs.shape) > 1:
                     n = 0
                     while n < len(t[col][0]):
@@ -93,10 +229,13 @@ def histograms(dir, file_start, file_end, cols, bands, out_path,
                         print('col1:', col1)
                         make_hist(xs, col1, units, comment, band,
                                   file_start + file_end,
-                                  out_path, zoom=zoom, save=save)
+                                  out_path,
+                                  infile=infile,
+                                  zoom=zoom, save=save)
                 else:
                     make_hist(xs, col, units, comment, band,
                               file_start + file_end, out_path,
+                              infile=infile,
                               zoom=zoom, save=save)
 
             else:
@@ -120,6 +259,10 @@ def histograms(dir, file_start, file_end, cols, bands, out_path,
 
 
 def AB_image(dir, file_start, file_end, bands):
+    """
+    explore the image size estimators
+
+    """
 
     for band in bands:
         with fits.open(dir + file_start + band + file_end) as hlist:
@@ -132,6 +275,8 @@ def AB_image(dir, file_start, file_end, bands):
             else:
                 A1s = data["A_IMAGE"]
                 B1s = data["B_IMAGE"]
+                xdata = A1s * B1s
+                xdata = np.log10(xdata)
                 fwhm1s = data["FWHM_IMAGE"]
                 #print sum(A0s - A1s)
                 #print sum(B0s - B1s)
@@ -139,12 +284,30 @@ def AB_image(dir, file_start, file_end, bands):
                 #plt.plot(fwhm1s**2, (A1s**2 + B1s**2), "k.")
                 #plt.plot(fwhm1s**2, ((A1s+B1s)/2.0)**2, "r.")
                 isos = data["ISOAREA_IMAGE"]
-                plt.plot(A1s * B1s, isos, "k.", ms=1)
+                ydata = np.log10(isos)
+                plt.plot(xdata, ydata, "k.", ms=1)
                 plt.xlabel("A_IMAGE * B_IMAGE")
                 plt.ylabel("ISOAREA_IMAGE")
-                plt.title("Made with parameter_investigation.py for the " +
-                          band + " band")
+                plt.title(infile + ': ' + band, fontsize='medium')
+                plotid()
                 plt.show()
+
+
+                A1s = data["A_IMAGE"]
+                B1s = data["B_IMAGE"]
+                xdata = A1s * B1s
+                xdata = np.log10(xdata)
+                fwhm1s = data["FWHM_IMAGE"]
+                ydata = np.log10(fwhm1s)
+                plt.plot(xdata, ydata, "k.", ms=1)
+                plt.xlabel("A_IMAGE * B_IMAGE")
+                plt.ylabel("FWHM_IMAGE")
+                plt.title(infile + ': ' + band, fontsize='medium')
+                plotid()
+                plt.show()
+
+
+
 
             #if band == "i":
                 #for (n,A) in enumerate(A1s):
@@ -155,6 +318,7 @@ def AB_image(dir, file_start, file_end, bands):
                 #    if B > 4.0:
                 #        fig = PA.cutout_image("", data["ALPHAWIN_J2000"][n], data["DELTAWIN_J2000"][n], "DES0332-2749", "20130305000001_DES0332-2749",     data["NUMBER"][n], cat_info = True)
                 #        plt.show()
+
 
 
 def kron_radius(dir, file_start, file_end, bands,
@@ -509,10 +673,102 @@ def chi(dir, file_start, file_end, bands):
 if __name__ == '__main__':
     """
 
-    """
 
-    tile = "DES0332-2749"
-    run = "20130305000001_DES0332-2749"
+    """
+    # import doctest
+    # doctest.testmod()
+
+    # place after __main__ unless needed by functions prior to __main__
+    import ConfigParser
+    import argparse
+
+
+    Config = ConfigParser.RawConfigParser()
+    # read config file; ConfigParser is renamed to configparser in Python 3
+    Config.read('ParameterAnalyis.cfg')
+    print(Config.sections())
+
+    # setup argparse
+    description = 'Catalogue parameter analysis'
+    epilog = ""
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description=description, epilog=epilog)
+
+    parser.add_argument("--verbose", action="store_true",
+                        help="optional verbose mode")
+
+    parser.add_argument("--debug", action="store_true",
+                        help="optional debug i.e. very verbose mode")
+
+    print('Number of arguments:', len(sys.argv), 'arguments: ', sys.argv[0])
+    args = parser.parse_args()
+
+    t0 = time.time()
+
+    datapath_root = Config.get('DEFAULT', 'datapath_root')
+    print('datapath_root:', datapath_root)
+
+    tilename = Config.get('DEFAULT', 'tilename')
+    print('tilename:', tilename)
+
+    # Note 'run' is deprecated in DES Y3A1
+    run = Config.get('DEFAULT', 'run')
+    print('run:', run)
+
+    # build the data path and input filename
+    waveband = 'i'
+    datapath = datapath_root + '/' + tilename + '/'
+    print('datapath:', datapath)
+
+    filename_prefix = tilename + '_' + waveband
+    filename_tail = '_cat.fits'
+    filename = filename_prefix + filename_tail
+
+    print('filename:', filename)
+    infile = datapath + '/' + filename
+
+    print('infile:', infile)
+    t = Table.read(infile)
+    t.meta['filename'] = filename
+    t.meta['filepath'] = datapath
+    t.info()
+    t.info('stats')
+
+    cols = t.columns
+    print('Number of columns:', len(cols))
+
+    bands = ["g", "r", "i", "z", "Y"]
+    bands = ['i']
+
+    outpath = '/tmp/'
+
+    filename_prefix = tilename + '_'
+    filename_tail = '_cat.fits'
+    filename = filename_prefix + filename_tail
+
+    print('filename:', filename)
+    infile = datapath + '/' + filename
+
+    # histograms(datapath, filename_prefix, filename_tail,
+    #           cols, bands, outpath, zoom=True)
+
+    AB_image(datapath, filename_prefix, filename_tail, bands)
+
+    kron_radius(dir, file_start, file_end, bands,
+                tile=tile, run=run)
+    elongation(dir, file_start, file_end, bands,
+               tile=tile, run=run)
+
+
+
+    # original tile
+    # tile = "DES0332-2749"
+    # run = "20130305000001_DES0332-2749"
+
+    # Fernanda's lense tile
+    # tilename = 'DES2327-n5248'
+    # run = 'Y3A1'
 
     #dir = "/data/desardata/SVA1/DES1000+0209/"
     #t = Table.read(dir + "DES1000+0209_i_cat.fits")
@@ -526,7 +782,7 @@ if __name__ == '__main__':
     # "AMODEL_WORLD", "BMODEL_WORLD", "THETAMODEL_J2000", "THETA_J2000",
     #"ISOAREAF_WORLD"]
     #cols = ["BMODEL_WORLD"]
-    #bands = ["g", "r", "i", "z", "Y"]
+
     #file_start = "DES0332-2749_"
 
     file_start = "DES0332-2749_"
