@@ -16,7 +16,7 @@ def mad(data, median=None, sigma=False):
 
 
 
-def doit(datapath=None, filename=None):
+def main(datapath=None, filename=None, release=None, tile=None):
 
     t=Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_g_cat.fits')
     columns=t.columns
@@ -49,7 +49,7 @@ def doit(datapath=None, filename=None):
         if column=='FLUX_APER' or column=='FLUXERR_APER' or column=='MAG_APER' or column=='MAGERR_APER':
             col=column
             for band in bands:
-                print band
+                print('band:', band)
                 a1=[]
                 a2=[]
                 a3=[]
@@ -64,42 +64,45 @@ def doit(datapath=None, filename=None):
                 a12=[]
                 for o in xrange(len(t)):
                     a1.append(t[column+band][o][0])
-                                        a2.append(t[column+band][o][1])
-                                        a3.append(t[column+band][o][2])
-                                        a4.append(t[column+band][o][3])
-                                        a5.append(t[column+band][o][4])
-                                        a6.append(t[column+band][o][5])
-                                        a7.append(t[column+band][o][6])
-                                        a8.append(t[column+band][o][7])
-                                        a9.append(t[column+band][o][8])
-                                        a10.append(t[column+band][o][9])
-                                        a11.append(t[column+band][o][10])
-                                        a12.append(t[column+band][o][11])
+                    a2.append(t[column+band][o][1])
+                    a3.append(t[column+band][o][2])
+                    a4.append(t[column+band][o][3])
+                    a5.append(t[column+band][o][4])
+                    a6.append(t[column+band][o][5])
+                    a7.append(t[column+band][o][6])
+                    a8.append(t[column+band][o][7])
+                    a9.append(t[column+band][o][8])
+                    a10.append(t[column+band][o][9])
+                    a11.append(t[column+band][o][10])
+                    a12.append(t[column+band][o][11])
+
                 t[column+'_1'+band]=np.array(a1)
-                                t[column+'_2'+band]=np.array(a2)
-                                t[column+'_3'+band]=np.array(a3)
-                                t[column+'_4'+band]=np.array(a4)
-                                t[column+'_5'+band]=np.array(a5)
-                                t[column+'_6'+band]=np.array(a6)
-                                t[column+'_7'+band]=np.array(a7)
-                                t[column+'_8'+band]=np.array(a8)
-                                t[column+'_9'+band]=np.array(a9)
-                                t[column+'_10'+band]=np.array(a10)
-                                t[column+'_11'+band]=np.array(a11)
-                                t[column+'_12'+band]=np.array(a12)
+                t[column+'_2'+band]=np.array(a2)
+                t[column+'_3'+band]=np.array(a3)
+                t[column+'_4'+band]=np.array(a4)
+                t[column+'_5'+band]=np.array(a5)
+                t[column+'_6'+band]=np.array(a6)
+                t[column+'_7'+band]=np.array(a7)
+                t[column+'_8'+band]=np.array(a8)
+                t[column+'_9'+band]=np.array(a9)
+                t[column+'_10'+band]=np.array(a10)
+                t[column+'_11'+band]=np.array(a11)
+                t[column+'_12'+band]=np.array(a12)
+
             for c in xrange(12):
                 column=col+'_'+str(c+1)
-                print column
-                            number.append(n+1)
-                            name.append(column)
-                            test1=t[column+'_G']-t[column+'_R']
-                            test2=t[column+'_G']-t[column+'_I']
-                            test3=t[column+'_G']-t[column+'_Z']
-                            test4=t[column+'_G']-t[column+'_Y']
-                            if min(test1)==0. and min(test2)==0. and min(test3)==0. and min(test4)==0. and max(test1)==0. and max(test2)==0. and max(test3)==0. and max(test4)==0. and np.median(test1)==0. and np.median(test2)==0. and np.median(test3)==0. and np.median(test4)==0.:
-                                    samesies.append('det')
-                            else:
-                                    samesies.append('mes')
+                print('column:', column)
+                number.append(n+1)
+                name.append(column)
+                test1=t[column+'_G']-t[column+'_R']
+                test2=t[column+'_G']-t[column+'_I']
+                test3=t[column+'_G']-t[column+'_Z']
+                test4=t[column+'_G']-t[column+'_Y']
+
+                if min(test1)==0. and min(test2)==0. and min(test3)==0. and min(test4)==0. and max(test1)==0. and max(test2)==0. and max(test3)==0. and max(test4)==0. and np.median(test1)==0. and np.median(test2)==0. and np.median(test3)==0. and np.median(test4)==0.:
+                    samesies.append('det')
+                else:
+                    samesies.append('mes')
                             gmin.append(min(t[column+'_G']))
                             gmax.append(max(t[column+'_G']))
                             gmedian.append(np.median(t[column+'_G']))
@@ -155,7 +158,7 @@ def doit(datapath=None, filename=None):
     tout=Table([number,name,samesies,gmin,rmin,imin,zmin,Ymin,gmax,rmax,imax,zmax,Ymax,gmedian,rmedian,imedian,zmedian,Ymedian,gmad,rmad,imad,zmad,Ymad],names=['number','column','imagedetect','gmin','rmin','imin','zmin','Ymin','gmax','rmax','imax','zmax','Ymax','gmedian','rmedian','imedian','zmedian','Ymedian','gmad','rmad','imad','zmad','Ymad'])
     tout.write(tile+'_'+release+'_columns.fits',overwrite=True)
     ascii.write(tout,tile+'_'+release+'_columns.txt')
-    print '###########################################'
+    print('###########################################')
 
 
 if __name__ == '__main__':
@@ -167,8 +170,6 @@ if __name__ == '__main__':
     bands=['_G','_R','_I','_Z','_Y']
 
 
-
-
     for release in releases:
 
-        doit()
+        main(datapath=None, filename=None, release=release, tile=tile)

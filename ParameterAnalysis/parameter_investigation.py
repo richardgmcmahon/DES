@@ -21,6 +21,11 @@ Other survey
 DESDM file name data model
 DES2327-5248_'WAVEBAND'_cat.fits where WAVEBAND = ['g', 'r', 'i', 'z', 'Y']
 
+/data/desardata/Y1A1//DES2327-5248//DES2327-5248_i_cat.fits
+
+163 columns
+4 colours have 12 dimensions
+Total number of dimemsions (163 - 4) + 48 = 207 dimensions
 
 Could split them into categories:
 
@@ -30,10 +35,28 @@ could add UCDs to DES etc to help!
 
 (i)  centroid measurements
 
+In pixel coordinates
+2:  [X, Y]_IMAGE
+8:  [X, Y][MODEL, PEAK, PSF, WIN]_IMAGE
+
+
+In celestial sky coordinates
 8: [ALPHA, DELTA][MODEL, PEAK, PSF, WIN]_J2000
+
+** [ALPHA, DELTA]_J2000 are missing corresponding to [X, Y]_IMAGE
+
+20 parameters
 
 
 (ii) size and shape measurement
+
+In pixel coordinates
+4: [X, Y][MIN, MAX]_IMAGE
+1: XY_IMAGE
+1: XYWIN_IMAGE
+2: [X, Y]2_IMAGE
+2: [X, Y]2WIN_IMAGE
+
 
 4: [A, B]MODEL_[IMAGE, WORLD]
 4: ERR[A, B]MODEL_[IMAGE, WORLD]
@@ -45,6 +68,8 @@ ERRX2WIN_IMAGE
 
 4: [A, B]_[IMAGE, WORLD]
 
+2: THETA_[IMAGE, J2000]
+2: THETAWIN_
 
 2: DISK_ASPECT_[IMAGE, WORLD]
 2: DISK_ASPECTERR_[IMAGE, WORLD]
@@ -65,7 +90,7 @@ ELLIP[1, 2]MODEL_[IMAGE, WORLD]
 (iii)   flux measurements
 
 BACKGROUND
-
+THRESHOLD
 
 
 (iv)  flux distribution measures
@@ -78,12 +103,16 @@ CHI2_PSF
 
 CLASS_STAR
 
+Y3A1
+
+/data/desardata3/Y3A1/r2587/DES2327-5248/p01/cat/
 
 
 """
 
 
 import os
+import logging
 import sys
 import time
 from time import strftime
@@ -682,11 +711,7 @@ if __name__ == '__main__':
     import ConfigParser
     import argparse
 
-
-    Config = ConfigParser.RawConfigParser()
-    # read config file; ConfigParser is renamed to configparser in Python 3
-    Config.read('ParameterAnalyis.cfg')
-    print(Config.sections())
+    t0 = time.time()
 
     # setup argparse
     description = 'Catalogue parameter analysis'
@@ -694,6 +719,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description=description, epilog=epilog)
+
+    config_file_default = 'ParameterAnalyis.cfg'
+    parser.add_argument ("-c", "--config_file",
+         default=config_file_default, type=str)
 
     parser.add_argument("--verbose", action="store_true",
                         help="optional verbose mode")
@@ -704,7 +733,18 @@ if __name__ == '__main__':
     print('Number of arguments:', len(sys.argv), 'arguments: ', sys.argv[0])
     args = parser.parse_args()
 
-    t0 = time.time()
+
+
+    Config = ConfigParser.RawConfigParser()
+    config_file = args.config_file
+    # read config file; ConfigParser is renamed to configparser in Python 3
+    logging.info('Reading configuration from %s' %(config_file))
+    Config.read(config_file)
+    print(Config.sections())
+
+
+    if args.verbose:
+        logging.info('Will produce verbose output')
 
     datapath_root = Config.get('DEFAULT', 'datapath_root')
     print('datapath_root:', datapath_root)
