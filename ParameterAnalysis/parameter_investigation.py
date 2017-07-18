@@ -1,6 +1,5 @@
 from __future__ import (print_function, division)
 
-
 """
 
 Analysis of image catalogue parameters from:
@@ -140,8 +139,10 @@ import Possibles_Analysis as PA
 import stats
 from match_lists import match_lists as ml
 
-def make_hist(xs, col, units, comment, band, file_start, out_path,
-              infile=None,
+def make_hist(xdata=None, column=None, units=None, comment=None,
+              waveband=None,
+              figpath=None,
+              infile=None, filename=None, datapath=None,
               zoom=False, save=True):
     """
 
@@ -150,41 +151,44 @@ def make_hist(xs, col, units, comment, band, file_start, out_path,
     """
 
     fig = plt.figure()
-    ids = np.where((xs == xs))[0]
-    xs = xs[ids]
-    pers = np.percentile(xs, [1.0, 99.0])
-    keeps = np.where((xs < pers[1]) & (xs > pers[0]))[0]
+    # what does this do?
+    ids = np.where((xdata == xdata))[0]
+    xdata = xdata[ids]
+    pers = np.percentile(xdata, [1.0, 99.0])
+    keeps = np.where((xdata < pers[1]) & (xdata > pers[0]))[0]
 
     if zoom and len(keeps) > 1:
-        xs1 = xs[keeps]
-        nper = len(xs1)
+        xdata1 = xdata[keeps]
+        nper = len(xdata1)
         ax1 = fig.add_subplot(121)
         ax2 = fig.add_subplot(122, sharey=ax1)
         ax2.get_yaxis().set_visible(False)
-        ax2.hist(xs1, bins=100, log=True, range=(min(xs1), max(xs1)))
+        ax2.hist(xdata1, bins=100, log=True,
+                 range=(min(xdata1), max(xdata1)))
         ax2.set_title("1st - 99th %tile: " + str(nper))
         labels2 = ax2.get_xticks()
         ax2.set_xticklabels(labels2, rotation=270)
     else:
         ax1 = fig.add_subplot(111)
 
-    nr = len(xs)
-    ax1.hist(xs, bins=100, log=True, range=(min(xs), max(xs)))
+    nr = len(xdata)
+    ax1.hist(xdata, bins=100, log=True,
+             range=(min(xdata), max(xdata)))
     labels1 = ax1.get_xticks()[:-1]
     ax1.set_xticklabels(labels1, rotation=270)
-    text = ("Min: " + str(min(xs)) + "\nMax: " + str(max(xs)) +
-            "\nMedian: " + str(np.median(xs)) + "\nSigma MAD: " +
-            str(1.4826 * stats.MAD(xs, np.median(xs))) + "\n1st %ile: " +
+    text = ("Min: " + str(min(xdata)) + "\nMax: " + str(max(xdata)) +
+            "\nMedian: " + str(np.median(xdata)) + "\nSigma MAD: " +
+            str(1.4826 * stats.MAD(xdata, np.median(xdata))) + "\n1st %ile: " +
             str(pers[0]) + "\n99th %ile: " + str(pers[1]))
     ax1.text(0.2, 0.7, text,
              transform=ax1.transAxes, bbox=dict(facecolor='blue', alpha=0.2))
     ax1.set_title("All points: " + str(nr))
-    text = col + " / " + units + "\n" + comment
+    text = column + " / " + units + "\n" + comment
     ax1.text(0.5, 0.05, text,
              ha="center", transform=fig.transFigure)
     ax1.set_ylabel("Frequency")
-    print(col, file_start, band)
-    fig.suptitle(col + " " + file_start + band)
+    print(column, filename, waveband)
+    fig.suptitle(column + " " + filename + waveband)
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2, wspace=0.0)
     plotid()
     fig = plt.gcf()
@@ -193,7 +197,7 @@ def make_hist(xs, col, units, comment, band, file_start, out_path,
     plotid()
     if save:
         basename=os.path.basename(infile)
-        figfile = out_path + '/' + basename + '_hist_' + col + ".png"
+        figfile = figpath + '/' + basename + '_hist_' + column + ".png"
         print('Saving:', figfile)
         plt.savefig(figfile)
         plt.close()
@@ -202,7 +206,7 @@ def make_hist(xs, col, units, comment, band, file_start, out_path,
 
 
 def histograms(datapath=None, filename=None,
-               cols=None, wavebands=None, figpath=None,
+               columns=None, waveband=None, figpath=None,
                table=None, zoom=False, save=True):
     """
 
@@ -211,77 +215,79 @@ def histograms(datapath=None, filename=None,
 
     Example figfile: DES2327-5248_g_cat_COLUMN.png
 
-
     """
-    print('dir:', dir)
-    print('file_start:', file_start)
-    print('file_end:', file_end)
 
-    for band in bands:
-        print('band:', band)
-        filename = file_start + band + file_end
-        infile = dir + '/' + filename
-        basename=os.path.basename(infile)
+    print('datapath:', datapath)
+    print('filename:', filename)
+    print('waveband:', waveband)
 
-        print('infile:', infile)
-        print('basename:', basename)
-        print('filename:', filename)
+    infile = datapath + '/' + filename
+    basename = os.path.basename(infile)
 
-        t = Table.read(infile)
-        hdr = fits.open(infile)
+    print('infile:', infile)
+    print('basename:', basename)
+    print('filename:', filename)
 
-        for (icol, col) in enumerate(cols):
-            column_list = list(t.columns)
-            print(icol, col, band)
+    t = Table.read(infile)
+    hdr = fits.open(infile)
 
-            if "-" not in col:
-                xs = np.array(t[col], dtype=np.float64)
-                units = ''
-                try:
-                    units = str(t[col].units)
-                except:
-                    pass
+    for (icol, column) in enumerate(columns):
+        column_list = list(t.columns)
+        print(icol, column, waveband)
 
-                print(icol, col, units)
+        if "-" not in column:
+            xdata = np.array(t[column], dtype=np.float64)
+            units = ''
+            try:
+                units = str(t[column].units)
+            except:
+                pass
 
-                i = column_list.index(col) + 1
-                comment = "(" + hdr[1].header.comments["TTYPE" + str(i)] + ")"
-                # loop through columns with >1 dimensions
-                if len(xs.shape) > 1:
-                    n = 0
-                    while n < len(t[col][0]):
-                        xs = t[col][:, n]
-                        col1 = col + "_" + str(n + 1)
-                        n += 1
-                        print('col1:', col1)
-                        make_hist(xs, col1, units, comment, band,
-                                  file_start + file_end,
-                                  out_path,
-                                  infile=infile,
-                                  zoom=zoom, save=save)
-                else:
-                    make_hist(xs, col, units, comment, band,
-                              file_start + file_end, out_path,
+            print(icol, column, units)
+
+            i = column_list.index(column) + 1
+            comment = "(" + hdr[1].header.comments["TTYPE" + str(i)] + ")"
+            # loop through columns with >1 dimensions
+            if len(xdata.shape) > 1:
+                n = 0
+                while n < len(t[column][0]):
+                    xdata = t[column][:, n]
+                    column1 = column + "_" + str(n + 1)
+                    n += 1
+                    print('column1:', column1)
+                    make_hist(xdata, column=column1, units=units,
+                              comment=comment, waveband=waveband,
+                              datapath=datapath,
+                              filename=filename,
+                              figpath=figpath,
                               infile=infile,
                               zoom=zoom, save=save)
-
             else:
-                l = col.index("-")
-                col1 = col[:l]
-                col2 = col[l + 1:]
-                xs = t[col1] - t[col2]
-                units = str(t[col1].units)
-                i1 = column_list.index(col1) + 1
-                i2 = column_list.index(col2) + 1
-                comment = "(" + hdr[1].header.comments["TTYPE" + str(i1)] + \
-                    " " + hdr[1].header.comments["TTYPE" + str(i2)] + ")"
-                if len(xs) > 1:
-                    #for xs in t[col]:
-                    make_hist(xs, col, units, comment, band,
-                              file_start + file_end,
-                              out_path, zoom=zoom, save=save)
-                else:
-                    print("No data")
+                make_hist(xdata=xdata, column=column, units=units,
+                          comment=comment, waveband=waveband,
+                          datapath=datapath,
+                          filename=filename, figpath=figpath,
+                          infile=infile,
+                          zoom=zoom, save=save)
+
+        else:
+            l = column.index("-")
+            col1 = column[:l]
+            col2 = column[l + 1:]
+            xdata = t[col1] - t[col2]
+            units = str(t[col1].units)
+            i1 = column_list.index(col1) + 1
+            i2 = column_list.index(col2) + 1
+            comment = "(" + hdr[1].header.comments["TTYPE" + str(i1)] + \
+                " " + hdr[1].header.comments["TTYPE" + str(i2)] + ")"
+            if len(xdata) > 1:
+                #for xdata in t[col]:
+                make_hist(xdata, column, units, comment, band,
+                          file_start + file_end,
+                          out_path, zoom=zoom, save=save)
+            else:
+                print("No data")
+
                     #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
 
 
@@ -697,6 +703,27 @@ def chi(dir, file_start, file_end, bands):
                 plt.show()
 
 
+
+def mk_filename_desdm(tilename=None, waveband=None,
+                      des_release=None, product='coadd_cat'):
+
+    waveband = 'i'
+    if des_release == 'SVA1':
+        filename_prefix = tilename + '_' + waveband
+
+    if des_release == 'Y1A1':
+        filename_prefix = tilename + '_' + waveband
+
+    if des_release == 'Y3A1':
+        filename_prefix = tilename + '_' + run + '_' + waveband
+
+    filename_tail = '_cat.fits'
+    filename = filename_prefix + filename_tail
+
+    return filename
+
+
+
 if __name__ == '__main__':
     """
 
@@ -773,8 +800,8 @@ if __name__ == '__main__':
     datapath_root = config.get('DEFAULT', 'datapath_root')
     print('datapath_root:', datapath_root)
 
-    DES_Release = config.get('DEFAULT', 'DES_Release')
-    print('DES_Release:', DES_Release)
+    des_release = config.get('DEFAULT', 'des_release')
+    print('des_release:', des_release)
 
     tilename = config.get('DEFAULT', 'tilename')
     print('tilename:', tilename)
@@ -790,21 +817,16 @@ if __name__ == '__main__':
         os.mkdir(figpath)
 
     # build the data path and input filename
-    waveband = 'i'
-    datapath = datapath_root + '/' + DES_Release + '/' + tilename + '/'
+
+    datapath = datapath_root + '/' + des_release + '/' + tilename + '/'
     print('datapath:', datapath)
 
-    if DES_Release == 'SVA1':
-        filename_prefix = tilename + '_' + waveband
+    wavebands = ["g", "r", "i", "z", "Y"]
+    wavebands = ['i']
 
-    if DES_Release == 'Y1A1':
-        filename_prefix = tilename + '_' + waveband
-
-    if DES_Release == 'Y3A1':
-        filename_prefix = tilename + '_' + run + '_' + waveband
-
-    filename_tail = '_cat.fits'
-    filename = filename_prefix + filename_tail
+    waveband = wavebands[0]
+    filename = mk_filename_desdm(tilename=tilename, waveband=waveband,
+                                 des_release=des_release)
 
     print('filename:', filename)
     infile = datapath + '/' + filename
@@ -819,23 +841,16 @@ if __name__ == '__main__':
     t.info()
     t.info('stats')
 
-    cols = t.columns
-    print('Number of columns:', len(cols))
+    columns = t.columns
+    print('Number of columns:', len(columns))
 
-    bands = ["g", "r", "i", "z", "Y"]
-    bands = ['i']
 
-    outpath = '/tmp/'
 
-    filename_prefix = tilename + '_'
-    filename_tail = '_cat.fits'
-    filename = filename_prefix + filename_tail
+    for waveband in wavebands:
 
-    print('filename:', filename)
-    infile = datapath + '/' + filename
-
-    histograms(datapath=datapath, filename=filename,
-               cols, bands, outpath, zoom=True)
+        histograms(datapath=datapath, filename=filename,
+                   columns=columns, waveband=waveband, figpath=figpath,
+                   zoom=True)
 
     AB_image(datapath, filename_prefix, filename_tail, bands)
 
