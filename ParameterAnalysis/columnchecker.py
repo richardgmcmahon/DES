@@ -103,38 +103,7 @@ def main(datapath=None, filename=None, release=None, tile=None):
                     samesies.append('det')
                 else:
                     samesies.append('mes')
-                            gmin.append(min(t[column+'_G']))
-                            gmax.append(max(t[column+'_G']))
-                            gmedian.append(np.median(t[column+'_G']))
-                            gmad.append(mad(t[column+'_G']))
-                            rmin.append(min(t[column+'_R']))
-                            rmax.append(max(t[column+'_R']))
-                            rmedian.append(np.median(t[column+'_R']))
-                            rmad.append(mad(t[column+'_R']))
-                            imin.append(min(t[column+'_I']))
-                            imax.append(max(t[column+'_I']))
-                            imedian.append(np.median(t[column+'_I']))
-                            imad.append(mad(t[column+'_I']))
-                            zmin.append(min(t[column+'_Z']))
-                            zmax.append(max(t[column+'_Z']))
-                            zmedian.append(np.median(t[column+'_Z']))
-                            zmad.append(mad(t[column+'_Z']))
-                            Ymin.append(min(t[column+'_Y']))
-                            Ymax.append(max(t[column+'_Y']))
-                            Ymedian.append(np.median(t[column+'_Y']))
-                            Ymad.append(mad(t[column+'_Y']))
-        else:
-            number.append(n+1)
-            name.append(column)
-            test1=t[column+'_G']-t[column+'_R']
-                        test2=t[column+'_G']-t[column+'_I']
-                        test3=t[column+'_G']-t[column+'_Z']
-                        test4=t[column+'_G']-t[column+'_Y']
-            if min(test1)==0. and min(test2)==0. and min(test3)==0. and min(test4)==0. and max(test1)==0. and max(test2)==0. and max(test3)==0. and max(test4)==0. and np.median(test1)==0. and np.median(test2)==0. and np.median(test3)==0. and np.median(test4)==0.:
-                samesies.append('det')
-            else:
-                samesies.append('mes')
-            gmin.append(min(t[column+'_G']))
+                    gmin.append(min(t[column+'_G']))
                     gmax.append(max(t[column+'_G']))
                     gmedian.append(np.median(t[column+'_G']))
                     gmad.append(mad(t[column+'_G']))
@@ -154,7 +123,40 @@ def main(datapath=None, filename=None, release=None, tile=None):
                     Ymax.append(max(t[column+'_Y']))
                     Ymedian.append(np.median(t[column+'_Y']))
                     Ymad.append(mad(t[column+'_Y']))
-                n+=1
+        else:
+            number.append(n+1)
+            name.append(column)
+            test1=t[column+'_G']-t[column+'_R']
+            test2=t[column+'_G']-t[column+'_I']
+            test3=t[column+'_G']-t[column+'_Z']
+            test4=t[column+'_G']-t[column+'_Y']
+            if min(test1)==0. and min(test2)==0. and min(test3)==0. and min(test4)==0. and max(test1)==0. and max(test2)==0. and max(test3)==0. and max(test4)==0. and np.median(test1)==0. and np.median(test2)==0. and np.median(test3)==0. and np.median(test4)==0.:
+                samesies.append('det')
+            else:
+                samesies.append('mes')
+            gmin.append(min(t[column+'_G']))
+            gmax.append(max(t[column+'_G']))
+            gmedian.append(np.median(t[column+'_G']))
+            gmad.append(mad(t[column+'_G']))
+            rmin.append(min(t[column+'_R']))
+            rmax.append(max(t[column+'_R']))
+            rmedian.append(np.median(t[column+'_R']))
+            rmad.append(mad(t[column+'_R']))
+            imin.append(min(t[column+'_I']))
+            imax.append(max(t[column+'_I']))
+            imedian.append(np.median(t[column+'_I']))
+            imad.append(mad(t[column+'_I']))
+            zmin.append(min(t[column+'_Z']))
+            zmax.append(max(t[column+'_Z']))
+            zmedian.append(np.median(t[column+'_Z']))
+            zmad.append(mad(t[column+'_Z']))
+            Ymin.append(min(t[column+'_Y']))
+            Ymax.append(max(t[column+'_Y']))
+            Ymedian.append(np.median(t[column+'_Y']))
+            Ymad.append(mad(t[column+'_Y']))
+
+        n+=1
+
     tout=Table([number,name,samesies,gmin,rmin,imin,zmin,Ymin,gmax,rmax,imax,zmax,Ymax,gmedian,rmedian,imedian,zmedian,Ymedian,gmad,rmad,imad,zmad,Ymad],names=['number','column','imagedetect','gmin','rmin','imin','zmin','Ymin','gmax','rmax','imax','zmax','Ymax','gmedian','rmedian','imedian','zmedian','Ymedian','gmad','rmad','imad','zmad','Ymad'])
     tout.write(tile+'_'+release+'_columns.fits',overwrite=True)
     ascii.write(tout,tile+'_'+release+'_columns.txt')

@@ -140,9 +140,6 @@ import Possibles_Analysis as PA
 import stats
 from match_lists import match_lists as ml
 
-help(plotid)
-
-
 def make_hist(xs, col, units, comment, band, file_start, out_path,
               infile=None,
               zoom=False, save=True):
@@ -204,7 +201,8 @@ def make_hist(xs, col, units, comment, band, file_start, out_path,
         plt.show()
 
 
-def histograms(dir, file_start, file_end, cols, bands, out_path,
+def histograms(datapath=None, filename=None,
+               cols=None, wavebands=None, figpath=None,
                table=None, zoom=False, save=True):
     """
 
@@ -708,7 +706,8 @@ if __name__ == '__main__':
     # doctest.testmod()
 
     # place after __main__ unless needed by functions prior to __main__
-    import ConfigParser
+    # The ConfigParser module has been renamed to configparser
+    import ConfigParser as configparser
     import argparse
 
     t0 = time.time()
@@ -721,8 +720,14 @@ if __name__ == '__main__':
         description=description, epilog=epilog)
 
     config_file_default = 'ParameterAnalyis.cfg'
-    parser.add_argument ("-c", "--config_file",
-         default=config_file_default, type=str)
+    parser.add_argument ("--config_file",
+                         default=config_file_default,
+                         type=str,
+                         help="configuration file")
+
+    parser.add_argument ("--figpath",
+                         default='./',
+                         help="path for output figures")
 
     parser.add_argument("--verbose", action="store_true",
                         help="optional verbose mode")
@@ -733,35 +738,71 @@ if __name__ == '__main__':
     print('Number of arguments:', len(sys.argv), 'arguments: ', sys.argv[0])
     args = parser.parse_args()
 
+    DEBUG = args.debug
 
-
-    Config = ConfigParser.RawConfigParser()
+    config = configparser.ConfigParser()
     config_file = args.config_file
-    # read config file; ConfigParser is renamed to configparser in Python 3
-    logging.info('Reading configuration from %s' %(config_file))
-    Config.read(config_file)
-    print(Config.sections())
 
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
+    #    datefmt='%a, %d %b %Y %H:%M:%S')
 
+    logger = logging.getLogger(__name__)
+    # create a logging format
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    logger.info('Reading configuration from %s' %(config_file))
+    config.read(config_file)
+    print(config.sections())
+    for section in config.sections():
+        print("Section: %s" % section)
+        for options in config.options(section):
+            print("%s = %s %s" % (options,
+                                   config.get(section, options),
+                                   str(type(options))))
+
+    if DEBUG:
+        raw_input("Enter any key to continue: ")
+
+    logger.setLevel(logging.WARNING)
     if args.verbose:
         logging.info('Will produce verbose output')
+        logging.setLevel(logging.DEBUG)
 
-    datapath_root = Config.get('DEFAULT', 'datapath_root')
+    datapath_root = config.get('DEFAULT', 'datapath_root')
     print('datapath_root:', datapath_root)
 
-    tilename = Config.get('DEFAULT', 'tilename')
+    DES_Release = config.get('DEFAULT', 'DES_Release')
+    print('DES_Release:', DES_Release)
+
+    tilename = config.get('DEFAULT', 'tilename')
     print('tilename:', tilename)
 
-    # Note 'run' is deprecated in DES Y3A1
-    run = Config.get('DEFAULT', 'run')
+    # Note 'run' is deprecated/redefined in DES Y3A1
+    run = config.get('DEFAULT', 'run')
     print('run:', run)
+
+    figpath = config.get('DEFAULT', 'figpath')
+    print('figpath:', figpath)
+    if not os.path.exists(figpath):
+        print('Creating:', figpath)
+        os.mkdir(figpath)
 
     # build the data path and input filename
     waveband = 'i'
-    datapath = datapath_root + '/' + tilename + '/'
+    datapath = datapath_root + '/' + DES_Release + '/' + tilename + '/'
     print('datapath:', datapath)
 
-    filename_prefix = tilename + '_' + waveband
+    if DES_Release == 'SVA1':
+        filename_prefix = tilename + '_' + waveband
+
+    if DES_Release == 'Y1A1':
+        filename_prefix = tilename + '_' + waveband
+
+    if DES_Release == 'Y3A1':
+        filename_prefix = tilename + '_' + run + '_' + waveband
+
     filename_tail = '_cat.fits'
     filename = filename_prefix + filename_tail
 
@@ -769,6 +810,9 @@ if __name__ == '__main__':
     infile = datapath + '/' + filename
 
     print('infile:', infile)
+    if DEBUG:
+        raw_input("Enter any key to continue: ")
+
     t = Table.read(infile)
     t.meta['filename'] = filename
     t.meta['filepath'] = datapath
@@ -790,8 +834,8 @@ if __name__ == '__main__':
     print('filename:', filename)
     infile = datapath + '/' + filename
 
-    # histograms(datapath, filename_prefix, filename_tail,
-    #           cols, bands, outpath, zoom=True)
+    histograms(datapath=datapath, filename=filename,
+               cols, bands, outpath, zoom=True)
 
     AB_image(datapath, filename_prefix, filename_tail, bands)
 
