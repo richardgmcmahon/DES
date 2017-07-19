@@ -10,8 +10,11 @@ PS1
 SDSS
 DECALS
 
-LSST
+VIDEO/VEILS
+HSC
 
+LSST
+EUCLID
 
 Compare and contrast the try to homogenise
 
@@ -707,7 +710,6 @@ def chi(dir, file_start, file_end, bands):
 def mk_filename_desdm(tilename=None, waveband=None,
                       des_release=None, product='coadd_cat'):
 
-    waveband = 'i'
     if des_release == 'SVA1':
         filename_prefix = tilename + '_' + waveband
 
@@ -721,6 +723,65 @@ def mk_filename_desdm(tilename=None, waveband=None,
     filename = filename_prefix + filename_tail
 
     return filename
+
+
+def des_analysis(datapath=None, tilename=None,
+                 wavebands=None,
+                 columns=None,
+                 des_release=None,
+                 figpath=None, debug=False):
+    """
+    columns are passed as input to allow specification of columns
+    to analyse
+
+    """
+
+    for waveband in wavebands:
+
+        filename = mk_filename_desdm(tilename=tilename,
+                                     waveband=waveband,
+                                     des_release=des_release)
+
+        infile = datapath + '/' + filename
+
+        print('filename:', filename)
+        print('infile:', infile)
+        print('waveband:', waveband)
+
+        if DEBUG:
+            raw_input("Enter any key to continue: ")
+
+        histograms(datapath=datapath, filename=filename,
+                   columns=columns, waveband=waveband, figpath=figpath,
+                   zoom=True)
+
+    AB_image(datapath, filename_prefix, filename_tail, bands)
+
+    kron_radius(dir, file_start, file_end, bands,
+                tile=tile, run=run)
+    elongation(dir, file_start, file_end, bands,
+               tile=tile, run=run)
+
+
+def ps1_analysis(datapath=None, filename=None,
+                 columns=None, waveband='',
+                 debug=False):
+
+
+        infile = datapath + '/' + filename
+
+        print('filename:', filename)
+        print('infile:', infile)
+        print('waveband:', waveband)
+
+        if DEBUG:
+            raw_input("Enter any key to continue: ")
+
+        histograms(datapath=datapath, filename=filename,
+                   columns=columns, figpath=figpath,
+                   waveband=waveband,
+                   zoom=True)
+
 
 
 
@@ -751,6 +812,23 @@ if __name__ == '__main__':
                          default=config_file_default,
                          type=str,
                          help="configuration file")
+
+    survey_project_default = 'DES'
+    parser.add_argument ("--survey_project",
+                         default=survey_project_default,
+                         help="Survey project e.g. DES, PS1, SDSS, VHS")
+
+    data_product_default = 'COADD'
+
+
+    data_release_default = 'Y1A1'
+    parser.add_argument ("--data_release",
+                         default=data_release_default,
+                         help="DES data release")
+
+    parser.add_argument ("--waveband",
+                         default=None,
+                         help="process a single waveband")
 
     parser.add_argument ("--figpath",
                          default='./',
@@ -797,69 +875,85 @@ if __name__ == '__main__':
         logging.info('Will produce verbose output')
         logging.setLevel(logging.DEBUG)
 
-    datapath_root = config.get('DEFAULT', 'datapath_root')
+    survey_project = args.survey_project
+
+    datapath_root = config.get(survey_project, 'datapath_root')
     print('datapath_root:', datapath_root)
 
-    des_release = config.get('DEFAULT', 'des_release')
-    print('des_release:', des_release)
+    if survey_project == 'DES':
+        des_release = config.get('DEFAULT', 'des_release')
+        print('des_release:', des_release)
 
-    tilename = config.get('DEFAULT', 'tilename')
-    print('tilename:', tilename)
+        tilename = config.get('DEFAULT', 'tilename')
+        print('tilename:', tilename)
 
-    # Note 'run' is deprecated/redefined in DES Y3A1
-    run = config.get('DEFAULT', 'run')
-    print('run:', run)
+        # Note 'run' is deprecated/redefined in DES Y3A1
+        run = config.get('DEFAULT', 'run')
+        print('run:', run)
 
-    figpath = config.get('DEFAULT', 'figpath')
+    figpath = config.get(survey_project, 'figpath')
     print('figpath:', figpath)
     if not os.path.exists(figpath):
         print('Creating:', figpath)
         os.mkdir(figpath)
 
     # build the data path and input filename
+    if survey_project == 'DES':
+        datapath = datapath_root + '/' + des_release + '/' + tilename + '/'
+    if survey_project == 'PS1':
+        filename = config.get(survey_project, 'filename')
+        datapath = datapath_root + '/'
 
-    datapath = datapath_root + '/' + des_release + '/' + tilename + '/'
     print('datapath:', datapath)
 
     wavebands = ["g", "r", "i", "z", "Y"]
-    wavebands = ['i']
+    # wavebands = ['i']
+    # wavebands = ["g", "r", "z", "Y"]
+    if args.waveband is not None:
+        wavebands = args.waveband
 
     waveband = wavebands[0]
-    filename = mk_filename_desdm(tilename=tilename, waveband=waveband,
-                                 des_release=des_release)
+    if survey_project == 'DES':
+        filename = mk_filename_desdm(tilename=tilename, waveband=waveband,
+                                     des_release=des_release)
 
     print('filename:', filename)
     infile = datapath + '/' + filename
 
     print('infile:', infile)
+    print('wavebands:', wavebands)
     if DEBUG:
         raw_input("Enter any key to continue: ")
 
+    print('Reading:', infile)
+    print('Elapsed time(secs): ',time.time() - t0)
     t = Table.read(infile)
+    print('Elapsed time(secs): ',time.time() - t0)
     t.meta['filename'] = filename
     t.meta['filepath'] = datapath
-    t.info()
-    t.info('stats')
 
     columns = t.columns
     print('Number of columns:', len(columns))
+    print('Number of row:', len(t))
+    if DEBUG:
+        raw_input("Enter any key to continue: ")
+
+    t.info()
+    t.info('stats')
 
 
-
-    for waveband in wavebands:
-
-        histograms(datapath=datapath, filename=filename,
-                   columns=columns, waveband=waveband, figpath=figpath,
-                   zoom=True)
-
-    AB_image(datapath, filename_prefix, filename_tail, bands)
-
-    kron_radius(dir, file_start, file_end, bands,
-                tile=tile, run=run)
-    elongation(dir, file_start, file_end, bands,
-               tile=tile, run=run)
+    if survey_project == 'DES':
+        des_analysis(datapath=datapath, tilename=tilename,
+                     wavebands=waveband,
+                     columns=columns,
+                     des_release=des_release,
+                     figpath=figpath, debug=DEBUG)
 
 
+    if survey_project == 'PS1':
+        ps1_analysis(datapath=datapath, filename=filename,
+                     columns=columns,
+                     debug=DEBUG)
 
     # original tile
     # tile = "DES0332-2749"
