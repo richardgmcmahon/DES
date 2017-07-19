@@ -191,7 +191,7 @@ def make_hist(xdata=None, column=None, units=None, comment=None,
              ha="center", transform=fig.transFigure)
     ax1.set_ylabel("Frequency")
     print(column, filename, waveband)
-    fig.suptitle(column + " " + filename + waveband)
+    fig.suptitle(column + ":" + filename + ':' + waveband, fontsize='small')
     plt.subplots_adjust(left=0.1, right=0.9, top=0.9, bottom=0.2, wspace=0.0)
     plotid()
     fig = plt.gcf()
@@ -324,7 +324,7 @@ def AB_image(dir, file_start, file_end, bands):
                 plt.plot(xdata, ydata, "k.", ms=1)
                 plt.xlabel("A_IMAGE * B_IMAGE")
                 plt.ylabel("ISOAREA_IMAGE")
-                plt.title(infile + ': ' + band, fontsize='medium')
+                plt.title(infile + ':' + band, fontsize='medium')
                 plotid()
                 plt.show()
 
@@ -338,7 +338,7 @@ def AB_image(dir, file_start, file_end, bands):
                 plt.plot(xdata, ydata, "k.", ms=1)
                 plt.xlabel("A_IMAGE * B_IMAGE")
                 plt.ylabel("FWHM_IMAGE")
-                plt.title(infile + ': ' + band, fontsize='medium')
+                plt.title(infile + ': ' + band, fontsize='small')
                 plotid()
                 plt.show()
 
@@ -567,7 +567,7 @@ def fluxes(dir, file_start, file_end, bands):
             ax.plot(xs, ys, "k.", ms=1)
             ax.set_xlabel(xlabel)
             ax.set_ylabel(ylabel)
-            ax.set_title(file_start + band)
+            ax.set_title(file_start + ':' + band)
             plotid.plotid()
             medx = np.median(xs)
             medy = np.median(ys)
@@ -783,6 +783,31 @@ def ps1_analysis(datapath=None, filename=None,
                    zoom=True)
 
 
+def generic_analysis(datapath=None, filename=None,
+                    columns=None,
+                    figpath=None,
+                    debug=False):
+
+
+        print('datapath:', datapath)
+        print('filename:', filename)
+
+        infile = datapath + '/' + filename
+
+        print('filename:', filename)
+        print('infile:', infile)
+        print('waveband:', waveband)
+
+        if DEBUG:
+            raw_input("Enter any key to continue: ")
+
+        histograms(datapath=datapath, filename=filename,
+                   columns=columns, figpath=figpath,
+                   waveband=waveband,
+                   zoom=True)
+
+
+
 
 
 if __name__ == '__main__':
@@ -802,7 +827,11 @@ if __name__ == '__main__':
 
     # setup argparse
     description = 'Catalogue parameter analysis'
-    epilog = ""
+    epilog = """Uses both command line arguments and a config file;
+                command line arguements over ride config parameters;
+                it is possible that not all config file parameters have
+                command line options and all combinations have been tested.
+             """
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         description=description, epilog=epilog)
@@ -829,6 +858,16 @@ if __name__ == '__main__':
     parser.add_argument ("--waveband",
                          default=None,
                          help="process a single waveband")
+
+    parser.add_argument ("--datapath",
+                         default=None,
+                         help="path for input data; overrides config file")
+
+
+    parser.add_argument ("--filename",
+                         default=None,
+                         help="filename for input data; overrides config file")
+
 
     parser.add_argument ("--figpath",
                          default='./',
@@ -877,7 +916,14 @@ if __name__ == '__main__':
 
     survey_project = args.survey_project
 
-    datapath_root = config.get(survey_project, 'datapath_root')
+
+    filename = args.filename
+
+    if args.datapath is None:
+        datapath_root = config.get(survey_project, 'datapath_root')
+    if args.datapath is not None:
+        datapath_root = args.datapath
+
     print('datapath_root:', datapath_root)
 
     if survey_project == 'DES':
@@ -891,7 +937,11 @@ if __name__ == '__main__':
         run = config.get('DEFAULT', 'run')
         print('run:', run)
 
-    figpath = config.get(survey_project, 'figpath')
+    if args.datapath is not None:
+        figpath = config.get(survey_project, 'figpath')
+    if args.datapath is None:
+        figpath = args.figpath
+
     print('figpath:', figpath)
     if not os.path.exists(figpath):
         print('Creating:', figpath)
@@ -913,12 +963,16 @@ if __name__ == '__main__':
         wavebands = args.waveband
 
     waveband = wavebands[0]
-    if survey_project == 'DES':
+    if survey_project == 'DES' and args.filename is not None:
         filename = mk_filename_desdm(tilename=tilename, waveband=waveband,
                                      des_release=des_release)
 
     print('filename:', filename)
     infile = datapath + '/' + filename
+
+    if args.filename is not None:
+        infile = args.filename
+        datapath = ''
 
     print('infile:', infile)
     print('wavebands:', wavebands)
@@ -940,6 +994,16 @@ if __name__ == '__main__':
 
     t.info()
     t.info('stats')
+
+    if args.filename is not None:
+        filename = args.filename
+        print('filename:', filename)
+        figpath = args.figpath
+        print('figpath:', figpath)
+
+        generic_analysis(datapath=datapath, filename=filename,
+                         columns=columns,
+                         figpath=figpath, debug=DEBUG)
 
 
     if survey_project == 'DES':
