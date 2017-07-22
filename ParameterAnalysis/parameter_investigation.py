@@ -126,6 +126,7 @@ import inspect
 import numpy as np
 import matplotlib.pyplot as plt
 
+import corner
 from astropy.table import Table
 import astropy.io.fits as fits
 import astropy.io.fits.compression
@@ -803,9 +804,137 @@ def generic_analysis(datapath=None, filename=None,
 
         histograms(datapath=datapath, filename=filename,
                    columns=columns, figpath=figpath,
-                   waveband=waveband,
+                   waveband='',
                    zoom=True)
 
+def corner_example(scatter=False):
+    # Set up the parameters of the problem.
+    ndim, nsamples = 3, 50000
+
+    # Generate some fake data.
+    np.random.seed(42)
+
+
+    # // Floor Division
+    print(ndim * 4 * nsamples // 5)
+    print(4 * nsamples // 5, ndim)
+
+    data1 = np.random.randn(ndim * 4 * nsamples // 5).reshape([4 * nsamples // 5, ndim])
+    print('data1.shape:', data1.shape)
+
+    data2 = (4*np.random.rand(ndim)[None, :] + np.random.randn(ndim * nsamples // 5).reshape([nsamples // 5, ndim]))
+    print('data2.shape:', data2.shape)
+
+
+    data = np.vstack([data1, data2])
+    # data = data1
+    # data = data2
+
+    print('data.shape:', data.shape)
+
+    # Plot it.
+    figure = corner.corner(data, verbose=True,
+                           labels=[r"$x$", r"$y$", r"$\log \alpha$", r"$\Gamma \, [\mathrm{parsec}]$"],
+                            quantiles=[0.159, 0.500, 0.841],
+                            show_titles=True, title_kwargs={"fontsize": 12})
+
+    plt.show()
+
+    plt.savefig('corner_example.png')
+
+    return
+
+
+def corner_example_table(table, scatter=False,
+                         colnames=['X_IMAGE', 'Y_IMAGE',
+                                   'XWIN_IMAGE', 'YWIN_IMAGE',
+                                   'XPEAK_IMAGE', 'YPEAK_IMAGE']):
+
+    print(colnames)
+    # Set up the parameters of the problem.
+    ndim, nsamples = 3, 50000
+
+    help(table)
+    help(table.columns)
+    print('len(table):', len(table))
+    print('len(table.columns):', len(table.columns))
+
+    # Generate some fake data.
+    # // Floor Division
+    print(ndim * 4 * nsamples // 5)
+    print(4 * nsamples // 5, ndim)
+    np.random.seed(42)
+    data1 = np.random.randn(ndim * 4 * nsamples // 5)
+    print('data1.shape:', data1.shape, len(data1))
+    data1 = data1.reshape([4 * nsamples // 5, ndim])
+    print('data1.shape:', data1.shape, len(data1))
+
+    data2 = (4*np.random.rand(ndim)[None, :] + np.random.randn(ndim * nsamples // 5).reshape([nsamples // 5, ndim]))
+    print('data2.shape:', data2.shape, len(data2))
+
+    data = np.hstack((table[colnames[0]], table[colnames[1]],
+                      table[colnames[2]], table[colnames[3]],
+                      table[colnames[4]], table[colnames[5]]))
+
+    print('table version: data.shape:', data.shape, len(data))
+    data = data.reshape(len(data) // 6, 6)
+    print('table version(reshaped): data.shape:', data.shape, len(data))
+
+    data = np.array([table[colnames[0]], table[colnames[1]],
+                     table[colnames[2]], table[colnames[3]],
+                     table[colnames[4]], table[colnames[5]]])
+    data = np.transpose(data)
+
+    print('table version: data.shape:', data.shape, len(data))
+
+
+    # data = data1
+    # data = data2
+
+    plt.plot(table[colnames[0]], table[colnames[1]], '.',
+             ms=1, markeredgecolor='none')
+    plt.axis('equal')
+    # ax.set_aspect('equal')
+    plt.xlabel(colnames[0])
+    plt.ylabel(colnames[1])
+    plt.show()
+
+    print('data.shape:', data.shape)
+
+    # Plot it.
+    figure = corner.corner(data, verbose=True, scatter=scatter,
+                           labels=colnames,
+                           quantiles=[0.159, 0.500, 0.841],
+                           show_titles=True, title_kwargs={"fontsize": 'small'})
+
+    plt.show()
+
+    plt.savefig('corner_example_1.png')
+
+    data = np.array([table['X_IMAGE'] - table['XWIN_IMAGE'],
+                     table['X_IMAGE'] - table['XPEAK_IMAGE'],
+                     table['X_IMAGE'] - table['XPSF_IMAGE']])
+    colnames = ['(X-XWIN)_IMAGE', '(X-XPEAK)_IMAGE',
+                '(X-XPSF)_IMAGE']
+    print('data.shape:', data.shape)
+
+    data = np.transpose(data)
+    print('data.shape:', data.shape)
+
+    figure = corner.corner(data, verbose=True, scatter=scatter,
+                           labels=colnames,
+                           quantiles=[0.159, 0.500, 0.841],
+                           show_titles=True,
+                           title_kwargs={"fontsize": 'small'})
+
+    plt.show()
+
+    plt.savefig('corner_example_2.png')
+
+
+
+
+    return
 
 
 
@@ -849,7 +978,6 @@ if __name__ == '__main__':
 
     data_product_default = 'COADD'
 
-
     data_release_default = 'Y1A1'
     parser.add_argument ("--data_release",
                          default=data_release_default,
@@ -861,17 +989,20 @@ if __name__ == '__main__':
 
     parser.add_argument ("--datapath",
                          default=None,
-                         help="path for input data; overrides config file")
-
+                         help="""
+                              optional path for input data; overrides
+                              config file""")
 
     parser.add_argument ("--filename",
                          default=None,
                          help="filename for input data; overrides config file")
 
-
     parser.add_argument ("--figpath",
                          default='./',
                          help="path for output figures")
+
+    parser.add_argument("--corner", action="store_true",
+                        help="corner plot")
 
     parser.add_argument("--verbose", action="store_true",
                         help="optional verbose mode")
@@ -879,22 +1010,26 @@ if __name__ == '__main__':
     parser.add_argument("--debug", action="store_true",
                         help="optional debug i.e. very verbose mode")
 
+
     print('Number of arguments:', len(sys.argv), 'arguments: ', sys.argv[0])
     args = parser.parse_args()
+
+    # logging.basicConfig(
+    #    level=logging.INFO,
+    #    format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s.%(msecs)02d %(levelname)s %(name)s' \
+               '%(module)s - %(funcName)s: %(message)s',
+               datefmt="%Y-%m-%d %H:%M:%S")
+
+    logger = logging.getLogger(__name__)
 
     DEBUG = args.debug
 
     config = configparser.ConfigParser()
     config_file = args.config_file
-
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s %(name)s %(levelname)-8s %(message)s')
-    #    datefmt='%a, %d %b %Y %H:%M:%S')
-
-    logger = logging.getLogger(__name__)
-    # create a logging format
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     logger.info('Reading configuration from %s' %(config_file))
     config.read(config_file)
@@ -909,6 +1044,7 @@ if __name__ == '__main__':
     if DEBUG:
         raw_input("Enter any key to continue: ")
 
+    # reduce the logging level
     logger.setLevel(logging.WARNING)
     if args.verbose:
         logging.info('Will produce verbose output')
@@ -916,14 +1052,12 @@ if __name__ == '__main__':
 
     survey_project = args.survey_project
 
-
     filename = args.filename
 
     if args.datapath is None:
         datapath_root = config.get(survey_project, 'datapath_root')
     if args.datapath is not None:
         datapath_root = args.datapath
-
     print('datapath_root:', datapath_root)
 
     if survey_project == 'DES':
@@ -938,8 +1072,11 @@ if __name__ == '__main__':
         print('run:', run)
 
     if args.datapath is not None:
-        figpath = config.get(survey_project, 'figpath')
+        datapath = args.datapath
+
     if args.datapath is None:
+        figpath = config.get(survey_project, 'figpath')
+    if args.datapath is not None:
         figpath = args.figpath
 
     print('figpath:', figpath)
@@ -963,18 +1100,33 @@ if __name__ == '__main__':
         wavebands = args.waveband
 
     waveband = wavebands[0]
-    if survey_project == 'DES' and args.filename is not None:
+    logging.info('survey_project:' + str(survey_project))
+    logging.info('args.filename:' + str(args.filename))
+    if survey_project == 'DES' and args.filename is None:
         filename = mk_filename_desdm(tilename=tilename, waveband=waveband,
                                      des_release=des_release)
+        logging.info('filename:' + str(filename))
 
-    print('filename:', filename)
-    infile = datapath + '/' + filename
+    logging.info('datapath:' + str(datapath))
+    if args.datapath is None and args.filename is not None:
+        datapath = ''
+    if args.datapath is not None:
+        datapath = args.datapath
+    logging.info('datapath:' + str(datapath))
 
     if args.filename is not None:
-        infile = args.filename
-        datapath = ''
+        filename = args.filename
+        # over ride default datapath some filename
+        if args.datapath is None:
+            datapath = ''
 
-    print('infile:', infile)
+    logging.info('datapath:' + str(datapath))
+    logging.info('filename:' + str(filename))
+
+    infile = datapath + '/' + filename
+
+    logging.info('infile:' + str(infile))
+
     print('wavebands:', wavebands)
     if DEBUG:
         raw_input("Enter any key to continue: ")
@@ -986,14 +1138,33 @@ if __name__ == '__main__':
     t.meta['filename'] = filename
     t.meta['filepath'] = datapath
 
+
+    t.info()
+    t.info('stats')
+
     columns = t.columns
     print('Number of columns:', len(columns))
     print('Number of row:', len(t))
     if DEBUG:
         raw_input("Enter any key to continue: ")
 
-    t.info()
-    t.info('stats')
+    help(corner)
+    if args.corner is True:
+        corner_example_table(t, scatter=False)
+
+        corner_example_table(t, scatter=True)
+
+        corner_example_table(t, scatter=False,
+                             colnames=['A_IMAGE', 'B_IMAGE',
+                                       'THETA_IMAGE', 'ELONGATION'])
+        corner_example_table(t, scatter=True,
+                             colnames=['A_IMAGE', 'B_IMAGE',
+                                       'THETA_IMAGE', 'ELONGATION'])
+
+        if DEBUG:
+            print('corner plot completed')
+            raw_input("Enter any key to continue: ")
+
 
     if args.filename is not None:
         filename = args.filename
