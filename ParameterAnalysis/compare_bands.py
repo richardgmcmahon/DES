@@ -18,31 +18,69 @@ from plotid import plotid
 
 from astropy.table import Table, hstack
 
-global tile
 
-def multhist(table=None, colname_prefix=None, release=None,
+def multihist(table=None, colname_prefix=None, tile=None, release=None,
         figname=None, lim=False, thetas=False, frad=False):
     """
 
+
     """
 
-    plt.subplots_adjust(bottom=0.2,wspace=0.25)
+    plt.subplots_adjust(bottom=0.2, wspace=0.25)
     plt.title(tile + ' ' + release)
+
+    xmin = np.nanmin(table[colname_prefix + '_G'])
+    xmax = np.nanmax(table[colname_prefix + '_G'])
+    print('column name prefix:', colname_prefix)
+    print('minimum (G):', xmin)
+    print('maximum (G):', xmax)
+    print('range(G):', xmax - xmin)
+    print('mean(G):    ', np.nanmean(table[colname_prefix + '_G']))
+    print('median(G):  ', np.nanmedian(table[colname_prefix + '_G']))
 
     binfactor = 20
     if thetas:
-                bins=np.arange(min(t[x+'_G']),max(t[x+'_G']),np.abs(np.mean(t[x+'_G'])))
+        bins = np.arange(np.nanmin(table[colname_prefix + '_G']),
+                         np.nanmax(table[colname_prefix + '_G']),
+                         np.abs(np.nanmean(table[colname_prefix + '_G'])))
     else:
-                bins=np.arange(min(t[x+'_G']),max(t[x+'_G']),np.abs(np.mean(t[x+'_G'])/binfactor))
-    plt.hist(t[x+'_G'],bins, histtype='step',color='#2e64fe',label='g')
+        bins = np.arange(np.nanmin(table[colname_prefix + '_G']),
+                         np.nanmax(table[colname_prefix + '_G']),
+                         np.abs(np.nanmean(table[colname_prefix + '_G'])/binfactor))
+
+    bins = 100
+    xdata = table[colname_prefix + '_G']
+    xdata = xdata[~np.isnan(xdata)]
+    plt.hist(xdata, bins,
+             histtype='step', color='#2e64fe', label='g')
+
+    # lazy fix
+    t = table
+    x = colname_prefix
     # bins=np.arange(min(t[x+'_R']),max(t[x+'_R']),np.mean(t[x+'_G'])/10)
-    plt.hist(t[x+'_R'],bins,histtype='step',color='#92cd00',label='r')
+    print('Overplotting r')
+    xdata = table[colname_prefix + '_R']
+    xdata = xdata[~np.isnan(xdata)]
+    plt.hist(xdata, bins,
+             histtype='step', color='#92cd00',label='r')
     # bins=np.arange(min(t[x+'_I']),max(t[x+'_I']),np.mean(t[x+'_G'])/10)
-    plt.hist(t[x+'_I'],bins,histtype='step',color='#ffbf00',label='i')
+    print('Overplotting i')
+    xdata = table[colname_prefix + '_I']
+    xdata = xdata[~np.isnan(xdata)]
+    plt.hist(xdata, bins,
+             histtype='step', color='#ffbf00', label='i')
     # bins=np.arange(min(t[x+'_Z']),max(t[x+'_Z']),np.mean(t[x+'_G'])/10)
-    plt.hist(t[x+'_Z'],bins,histtype='step',color='#eb7a3c',label='z')
+    print('Overplotting z')
+    xdata = table[colname_prefix + '_Z']
+    xdata = xdata[~np.isnan(xdata)]
+    plt.hist(xdata, bins,
+             histtype='step', color='#eb7a3c', label='z')
     # bins=np.arange(min(t[x+'_Y']),max(t[x+'_Y']),np.mean(t[x+'_Y'])/10)
-    plt.hist(t[x+'_Y'],bins,histtype='step',color='#cc0084',label='Y')
+    print('Overplotting Y')
+    xdata = table[colname_prefix + '_Y']
+    xdata = xdata[~np.isnan(xdata)]
+    plt.hist(xdata, bins,
+             histtype='step', color='#cc0084',label='Y')
     plt.xlabel(x)
     plotid()
 
@@ -52,9 +90,10 @@ def multhist(table=None, colname_prefix=None, release=None,
                 #plt.xlim(np.median(t[x+'_G'])-(np.std(t[x+'_G'])),np.median(t[x+'_G'])+(np.std(t[x+'_G'])))
                 plt.xlim(0.0,10)
 
-    plt.legend(prop={'size':10},loc='upper center', bbox_to_anchor=(0.5, -0.15),fancybox=True, shadow=False, ncol=5)
+    plt.legend(prop={'size':10}, loc='upper center',
+               bbox_to_anchor=(0.5, -0.15), fancybox=True, shadow=False, ncol=5)
 
-    plt.show()
+    # plt.show()
     print('Save:', figname)
     plt.savefig(figname)
     plt.clf()
@@ -111,6 +150,26 @@ def des_joinbands(tile=None, release=None):
         print(release, tile, 'done')
 
 
+def get_colname_prefixes(table=None):
+    """
+    return the unique list of colname prefixes
+
+    """
+    colnames = table.colnames
+    print(type(colnames), len(colnames))
+    print(colnames[0], colnames[-1])
+    prefixes = [word[:-2] for word in colnames]
+    print(prefixes[0], prefixes[-1])
+
+    print(len(prefixes))
+    prefixes = np.asarray(prefixes)
+    print(len(prefixes))
+
+    unique_prefixes = np.unique(prefixes)
+    print(unique_prefixes[0], unique_prefixes[-1])
+    print(len(unique_prefixes))
+
+    return unique_prefixes
 
 if __name__ == '__main__':
     """
@@ -128,12 +187,17 @@ if __name__ == '__main__':
     releases=['Y1A1']
     releases=['SVA1']
     releases=[]
-
     for release in releases:
         des_joinbands(tile=tile, release=release)
 
+    DEBUG = True
+    infile =  dirY + tile + '_merged_cat.fits'
+    print('Read:', infile)
+    tY = Table.read(infile)
+    colname_prefixes = get_colname_prefixes(table=tY)
+    if DEBUG:
+        raw_input("Enter any key to continue: ")
 
-    tY = Table.read(dirY + tile+'_merged_cat.fits')
     tS = []
     # tS = Table.read(dirS + tile+'_merged_cat.fits')
 
@@ -146,8 +210,14 @@ if __name__ == '__main__':
 
     # histogram of flux_radius
     # multhist(tS,'FLUX_RADIUS','SVA1',tile+'_fluxradius_SVA1.png',lim=False,thetas=False,frad=True)
-    multhist(table=tY, colname='FLUX_RADIUS', 'Y1A1', tile + '_fluxradius_Y1A1.png',
-             lim=False, thetas=False, frad=True)
+    release = 'Y1A1'
+    for colname_prefix in colname_prefixes:
+        figname = tile + '_' + colname_prefix + '_' + release + '_multihist' + '.png'
+        multihist(table=tY, colname_prefix=colname_prefix, release=release, tile=tile,
+                  figname=figname,
+                  lim=False, thetas=False, frad=False)
+
+    sys.exit()
 
     # mag x flux_radius (ratios?)
     # fxy(tS,tY,'FLUX_RADIUS_G','MAG_AUTO_G','FLUX_RADIUS_G','MAG_AUTO_G',tile+'_fluxradius_mag_g.png',yinvert=True, lim=False,frad=True)
