@@ -260,6 +260,9 @@ def histograms(datapath=None, filename=None,
                     column1 = column + "_" + str(n + 1)
                     n += 1
                     print('column1:', column1)
+                    print('column range:', np.min(xdata), np.max(xdata))
+                    print('column range:', np.nanmin(xdata), np.nanmax(xdata))
+                    xdata = xdata[~np.isnan(xdata)]
                     make_hist(xdata, column=column1, units=units,
                               comment=comment, waveband=waveband,
                               datapath=datapath,
@@ -268,7 +271,12 @@ def histograms(datapath=None, filename=None,
                               infile=infile,
                               zoom=zoom, save=save)
             else:
-                make_hist(xdata=xdata, column=column, units=units,
+                print('column range:', np.min(xdata), np.max(xdata))
+                print('column range:', np.nanmin(xdata), np.nanmax(xdata))
+                xdata = xdata[~np.isnan(xdata)]
+                print('len(xdata):', len(xdata))
+                if len(xdata) > 0:
+                    make_hist(xdata=xdata, column=column, units=units,
                           comment=comment, waveband=waveband,
                           datapath=datapath,
                           filename=filename, figpath=figpath,
@@ -1085,7 +1093,7 @@ if __name__ == '__main__':
     if args.datapath is not None:
         figpath = args.figpath
 
-    print('figpath:', figpath)
+    print('figpath:', figpath, os.path.exists(figpath))
     if not os.path.exists(figpath):
         print('Creating:', figpath)
         os.mkdir(figpath)
@@ -1177,13 +1185,17 @@ if __name__ == '__main__':
     if args.filename is not None:
         filename = args.filename
         print('filename:', filename)
-        figpath = args.figpath
-        print('figpath:', figpath)
+        if args.figpath is not None:
+            figpath = args.figpath
+
+        print('figpath:', figpath, os.path.exists(figpath))
+        if not os.path.exists(figpath):
+            print('Creating:', figpath)
+            os.mkdir(figpath)
 
         generic_analysis(datapath=datapath, filename=filename,
                          columns=columns,
                          figpath=figpath, debug=DEBUG)
-
 
     if survey_project == 'DES':
         des_analysis(datapath=datapath, tilename=tilename,
