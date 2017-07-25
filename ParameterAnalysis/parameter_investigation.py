@@ -86,7 +86,6 @@ ERRTHETA_IMAGE
 ERRTHETA[MODEL, PSF, WIN]_[IMAGE, J2000] *** CHECK ID WORLD AND J2000 ARE SAME
 
 
-
 ELLIP[1, 2]MODEL_[IMAGE, WORLD]
 
 (iii)   flux measurements
@@ -235,11 +234,13 @@ def histograms(datapath=None, filename=None,
     t = Table.read(infile)
     hdr = fits.open(infile)
 
+
     for (icol, column) in enumerate(columns):
         column_list = list(t.columns)
-        print(icol, column, waveband)
+        print(icol, column, t[column].dtype, waveband)
+        print(type(t[column]), type(t[column][0]))
 
-        if "-" not in column:
+        if "-" not in column and not isinstance(t[column][0], basestring):
             xdata = np.array(t[column], dtype=np.float64)
             units = ''
             try:
@@ -274,7 +275,7 @@ def histograms(datapath=None, filename=None,
                           infile=infile,
                           zoom=zoom, save=save)
 
-        else:
+        elif "-" in column and not isinstance(t[column][0], basestring):
             l = column.index("-")
             col1 = column[:l]
             col2 = column[l + 1:]
@@ -291,6 +292,11 @@ def histograms(datapath=None, filename=None,
                           out_path, zoom=zoom, save=save)
             else:
                 print("No data")
+
+        else:
+            print('Skiping string column')
+
+    return
 
                     #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
 
