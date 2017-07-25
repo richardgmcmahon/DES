@@ -132,13 +132,32 @@ def abtheta(x2,y2,xy):
         return a, b, ellip
 
 
-def des_joinbands(tile=None, release=None):
+def des_joinbands(tile=None, release=None, suffix='r2587p01'):
 
-        g = Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_g_cat.fits')
-        r = Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_r_cat.fits')
-        i = Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_i_cat.fits')
-        z = Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_z_cat.fits')
-        Y = Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_Y_cat.fits')
+        infile = '/data/desardata/'+release+'/'+tile+'/'+tile+'_g_cat.fits'
+        if release == 'Y3A1':
+            infile = '/data/desardata/' + release + '/' + tile + '/' + tile+ '_' + suffix + '_g_cat.fits'
+        g = Table.read(infile)
+
+        infile = '/data/desardata/'+release+'/'+tile+'/'+tile+'_r_cat.fits'
+        if release == 'Y3A1':
+            infile = '/data/desardata/' + release + '/' + tile + '/' + tile+ '_' + suffix + '_r_cat.fits'
+        r = Table.read(infile)
+
+        infile = '/data/desardata/'+release+'/'+tile+'/'+tile+'_i_cat.fits'
+        if release == 'Y3A1':
+            infile = '/data/desardata/' + release + '/' + tile + '/' + tile+ '_' + suffix + '_i_cat.fits'
+        i = Table.read(infile)
+
+        infile = '/data/desardata/'+release+'/'+tile+'/'+tile+'_z_cat.fits'
+        if release == 'Y3A1':
+            infile = '/data/desardata/' + release + '/' + tile + '/' + tile+ '_' + suffix + '_z_cat.fits'
+        z = Table.read(infile)
+
+        infile = '/data/desardata/'+release+'/'+tile+'/'+tile+'_Y_cat.fits'
+        if release == 'Y3A1':
+            infile = '/data/desardata/' + release + '/' + tile + '/' + tile+ '_' + suffix + '_Y_cat.fits'
+        Y = Table.read(infile)
 
         # stack all the columns across the DES wavebands
         t = hstack([g,r,i,z,Y], table_names=['G','R','I','Z','Y'])
@@ -180,15 +199,16 @@ if __name__ == '__main__':
     # tile='DES0453-4457'
     # tile='DES0449-4706'
     tile = 'DES2327-5248'
-    dirY = '/data/desardata/Y1A1/'+tile+'/'
-    dirS = '/data/desardata/SVA1/'+tile+'/'
+    dirY = '/data/desardata/Y1A1/' + tile + '/'
+    dirY = '/data/desardata/Y3A1/' + tile + '/'
+    dirS = '/data/desardata/SVA1/' + tile + '/'
 
     releases=['SVA1','Y1A1']
     releases=['Y1A1']
     releases=['SVA1']
-    releases=[]
+    releases=['Y3A1']
     for release in releases:
-        des_joinbands(tile=tile, release=release)
+        des_joinbands(tile=tile, release=release, suffix='r2587p01')
 
     DEBUG = True
     infile =  dirY + tile + '_merged_cat.fits'
@@ -201,7 +221,7 @@ if __name__ == '__main__':
     tS = []
     # tS = Table.read(dirS + tile+'_merged_cat.fits')
 
-    tY = tY[tY['MAG_AUTO_I']<19.0]
+    tY = tY[tY['MAG_AUTO_I']<21.0]
     # tS = tS[tS['MAG_AUTO_I']<19.0]
 
     tS = []
@@ -210,7 +230,7 @@ if __name__ == '__main__':
 
     # histogram of flux_radius
     # multhist(tS,'FLUX_RADIUS','SVA1',tile+'_fluxradius_SVA1.png',lim=False,thetas=False,frad=True)
-    release = 'Y1A1'
+    release = 'Y3A1'
     for colname_prefix in colname_prefixes:
         figname = tile + '_' + colname_prefix + '_' + release + '_multihist' + '.png'
         multihist(table=tY, colname_prefix=colname_prefix, release=release, tile=tile,

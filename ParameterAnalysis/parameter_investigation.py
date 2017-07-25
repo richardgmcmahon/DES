@@ -1148,8 +1148,10 @@ if __name__ == '__main__':
     if DEBUG:
         raw_input("Enter any key to continue: ")
 
-    help(corner)
+
     if args.corner is True:
+        if DEBUG:
+            help(corner)
         corner_example_table(t, scatter=False)
 
         corner_example_table(t, scatter=True)
