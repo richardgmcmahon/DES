@@ -462,270 +462,6 @@ def plot_lightcurve():
     return
 
 
-def get_cutout(infile=None, data=None, ext=1, header=None,
-               AstWCS=None,
-               position=None, format='pixels', size=100,
-               title=None, suptitle=None,
-               imagetype='data',
-               segmap=False, weightmap=False,
-               plot=False, saveplot=True,
-               plotfile_suffix=None, plotfile_prefix=None,
-               verbose=False, debug=False):
-    """
-
-
-
-    """
-
-    from astropy.nddata.utils import Cutout2D
-
-    print('position: ', position[0], position[1])
-    position = np.rint(position)
-    print('position: ', position[0], position[1])
-
-    if infile is not None:
-        hdulist = fits.open(infile)
-        hdulist.info()
-        AstWCS = wcs.WCS(hdulist[ext].header)
-        xpix0 = np.rint(position[0]) - (size/2)
-        ypix0 = np.rint(position[1]) - (size/2)
-        xpix0 =  xpix0.astype(int)
-        ypix0 =  ypix0.astype(int)
-        print('xpix0, ypix0: ', xpix0, ypix0)
-        xpix1 = xpix0 + size
-        ypix1 = ypix0 + size
-        data = hdulist[ext].data[ypix0:ypix1, xpix0:xpix1]
-
-    if debug: help(data)
-    print('data.shape: ', data.shape)
-    median=np.median(data)
-    print('median.shape: ', median.shape)
-    print('median: ', median)
-
-    if segmap:
-        # determine the list of unique sources in the segmentation image
-        unique_sources = np.unique(data)
-        nsources = len(unique_sources)
-        print('Number of unique segmented sources: ', nsources)
-        print(unique_sources)
-        isource = 1
-        # skip the first with value = zero which is background
-        for unique_source in unique_sources[1:]:
-            isource = isource + 1
-            print(isource, unique_source)
-            index = np.where(data == unique_source)
-            print(index)
-            data[index] = isource
-
-    if ext != 2:
-        itest = data > 0.5
-        print('min: ', np.min(data[itest]))
-        threshold = np.min(data[itest]) - 1
-
-        print('threshold: ', threshold)
-
-    print('max: ', np.max(data))
-
-    mad  = median_absolute_deviation(data)
-    mad_stdev = mad_std(data)
-
-    print('mad:', mad)
-    print('mad_std:', mad_stdev)
-    print('mad/mad_std:', mad_stdev/mad)
-
-    if ext != 2:
-        data = data - threshold
-        itest = data < 0
-        data[itest] = 0
-
-    median=np.median(data)
-    print('median: ', median)
-
-    position = (size/2, size/2)
-    cutout = Cutout2D(data, position, size)
-    if debug: help(cutout)
-
-    if plot:
-
-        plt.figure(figsize=(8,6))
-
-        cmap = mpl.cm.jet
-        if segmap:
-            #cmap = mpl.cm.jet_r
-            #cmap.set_under(color='w')
-            #cmax = np.max(data)
-            #cmap.set_clim(1,cmax)
-            #itest = data > 0.5
-            #data[itest] = np.nan
-            data = ma.masked_where(data < 0.5, data)
-            cmap.set_bad('w')
-        #plt.imshow(cutout.data, origin='lower', interpolation='nearest')
-            plt.imshow(data, origin='lower', interpolation='nearest',
-                cmap=cmap)
-
-        if not segmap:
-            crange = 50
-            if weightmap:crange = 10
-            lower = -1.0
-            vmin = median+(lower*mad_stdev)
-            vmax=  min([median+(crange*mad_stdev),max])
-            plt.imshow(data, origin='lower', interpolation='nearest',
-                cmap=cmap,
-                vmin=vmin, vmax=vmax)
-
-        plt.gca().invert_xaxis()
-
-        plt.xlabel('pixels')
-        plt.ylabel('pixels')
-        if title is not None: plt.title(title)
-        if suptitle is not None: plt.suptitle(suptitle)
-        plt.colorbar()
-        plotid()
-
-
-        if saveplot:
-            plotfile = 'cutout'
-            if segmap:
-                plotfile = 'cutout_segmap'
-            if weightmap:
-                plotfile = 'cutout_weightmap'
-
-            if plotfile_suffix is not None:
-                plotfile = plotfile + '_' + plotfile_suffix
-
-            if plotfile_prefix is not None:
-                plotfile = plotfile_prefix + '_' + plotfile
-
-            plotfile = plotfile + '.png'
-            print('Saving :', plotfile)
-            plt.savefig(plotfile)
-
-        plt.show()
-
-    return cutout.data
-
-
-def wcs_PixelScale(AstWCS, x, y, debug=False):
-    """
-    simple determination of the pixel scale by computing the change in
-    RA, Dec by one pixel centered on a specific pixel
-
-         4
-      1  0  2
-         3
-
-    requires WCS object from astropy.wcs
-
-    """
-
-    ra1, dec1 = AstWCS.wcs_pix2world(x-0.5, y, 1)
-    ra2, dec2 = AstWCS.wcs_pix2world(x+0.5, y, 1)
-
-    if debug: print('dec1, dec2: ', dec1, dec2)
-    dec = (dec1 + dec2)/2.0
-    if debug: print('Dec, cos(Dec): ', dec, np.cos(np.deg2rad(dec)))
-    RAScale = (ra1 - ra2) *3600 * np.cos(np.deg2rad(dec))
-    if debug: print('RAScale:', RAScale)
-
-    ra3, dec3 = AstWCS.wcs_pix2world(x, y-0.5, 1)
-    ra4, dec4 = AstWCS.wcs_pix2world(x, y+0.5, 1)
-
-    DecScale = (dec4 - dec3) *3600
-
-    print('x, y, RAScale, DecScale:',
-        x, y, RAScale, DecScale, RAScale/DecScale)
-
-    return RAScale, DecScale
-
-
-def get_wcs(infile, ext=1, verbose=False, debug=False):
-    """
-    read WSC from a FITs image and do some simple World <-> Pixel operations
-
-    """
-
-    if debug: help(wcs)
-
-    # Load the FITS hdulist using astropy.io.fits
-    hdulist = fits.open(infile)
-    print(hdulist.info())
-
-    # Parse the WCS keywords in the primary HDU
-    #key=raw_input("Enter any key to continue: ")
-    AstWCS = wcs.WCS(hdulist[ext].header)
-    NAXIS1= hdulist[ext].header['NAXIS1']
-    NAXIS2= hdulist[ext].header['NAXIS2']
-    print('NAXIS1: ', NAXIS1)
-    print('NAXIS2: ', NAXIS2)
-
-    RAScale, DecScale = wcs_PixelScale(AstWCS, 5000.5, 5000.5)
-
-    if debug: AstWCS.wcs.print_contents()
-
-    #help(AstWCS)
-    x1 = 1
-    y1 = 1
-    radec = AstWCS.wcs_pix2world(x1, y1, 1)
-    print('RA1, Dec1:', radec)
-
-    y2 = NAXIS1
-    radec = AstWCS.wcs_pix2world(x1, y2, 1)
-    print('RA1, Dec1:', radec)
-
-    wcs_PixelScale(AstWCS, 1, 1)
-    wcs_PixelScale(AstWCS, 1, NAXIS2)
-    wcs_PixelScale(AstWCS, NAXIS1, 1)
-    wcs_PixelScale(AstWCS, NAXIS1, NAXIS2)
-    # compute pixel scale
-
-    RAScale, DecScale = wcs_PixelScale(AstWCS, 5000.5, 5000.5)
-
-    ra4, dec4 = AstWCS.wcs_pix2world(NAXIS1, NAXIS2, 1)
-    print('RA4, Dec4: ', ra4, dec4)
-
-    if debug: help(AstWCS)
-    hdulist.close()
-
-    footprint = AstWCS.calc_footprint()
-    print('footprint: ', footprint)
-    key=raw_input("Enter any key to continue: ")
-
-    if verbose or debug:
-        print(repr(hdulist[1].header))
-
-        if debug: AstWCS.wcs.print_contents()
-        if debug: help(AstWCS.wcs)
-
-        print('NAME: ', AstWCS.wcs.name)
-        print('NAXIS: ', AstWCS.wcs.naxis)
-        #print('NAXIS1: ', AstWCS.wcs.naxes)
-        #print('NAXIS1: ', AstWCS.wcs.naxis1)
-        #print('NAXIS2: ', AstWCS.wcs.naxis2)
-        print('CRPIX: ', AstWCS.wcs.crpix)
-        print('CDELT: ', AstWCS.wcs.cdelt)
-        print('CD: ', AstWCS.wcs.cd)
-        print('CRVAL: ', AstWCS.wcs.crval)
-        print('CTYPE: ', AstWCS.wcs.ctype)
-
-        crpix1, crpix2 = AstWCS.wcs.crpix
-        crval1, crval2 = AstWCS.wcs.crval
-
-        print('CRPIX1, CRPIX2: ', crpix1, crpix2)
-        ra, dec = AstWCS.wcs_pix2world(crpix1, crpix2, 1)
-        print('RA, Dec: ', ra, dec)
-
-        print('CRVAL1, CRVAL2: ', crval1, crval2)
-        radec = ICRS(crval1*u.degree, crval2*u.degree)
-        #print(radec.ra.to_string(u.degree))
-        print('RA, Dec: ',
-            radec.ra.to_string(unit=u.hour, sep=' ', precision=3),
-            radec.dec.to_string(unit=u.degree, sep=' ', precision=2))
-
-        xpix, ypix = AstWCS.wcs_world2pix(crval1, crval2, 1)
-        print('X0, Y0: ', xpix, ypix)
-
-    return AstWCS
-
 
 def list_lenses():
     """
@@ -1289,13 +1025,13 @@ if __name__ == "__main__":
         suptitle = segmapname
         title = source
 
-        wcs_image=get_wcs(segmapfile, verbose=True, debug=debug)
+        wcs_image = get_wcs(segmapfile, verbose=True, debug=debug)
         xpix, ypix = wcs_image.wcs_world2pix(ra_source, dec_source, 1)
         print('RA, Dec, X, Y: ', ra_source, dec_source, xpix, ypix)
 
         key = raw_input("Enter any key to continue to edge detector: ")
 
-        segmap = get_cutout(infile=segmapfile, ext=ext,
+        segmap = des_get_cutout(infile=segmapfile, ext=ext,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels', segmap=True,
             size=size, plot=True, saveplot=True,
@@ -1340,7 +1076,7 @@ if __name__ == "__main__":
         title = source
 
         plotfile_suffix = BAND + '_' + str(size)
-        get_cutout(infile = imagefile, ext=1,
+        des_get_cutout(infile = imagefile, ext=1,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels',
             size=size, plot=True, saveplot=True,
@@ -1350,7 +1086,7 @@ if __name__ == "__main__":
 
         # weight map
         ext=2
-        get_cutout(infile = imagefile, ext=ext,
+        des_get_cutout(infile = imagefile, ext=ext,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels', weightmap=True,
             size=size, plot=True, saveplot=True,
@@ -1360,7 +1096,7 @@ if __name__ == "__main__":
 
 
         ext=1
-        segmap = get_cutout(infile = segmapfile, ext=ext,
+        segmap = des_get_cutout(infile = segmapfile, ext=ext,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels', segmap=True,
             size=size, plot=True, saveplot=True,

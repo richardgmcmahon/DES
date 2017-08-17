@@ -134,6 +134,7 @@ import astropy.io.fits.compression
 sys.path.append('/home/rgm/soft/python/lib/')
 sys.path.append('/home/rgm/soft/sreed/')
 
+from librgm.table_stats import table_stats
 from librgm.plotid import plotid
 
 
@@ -141,6 +142,66 @@ from librgm.plotid import plotid
 import Possibles_Analysis as PA
 import stats
 from match_lists import match_lists as ml
+
+
+def explore_table_header(table=None, infile=None, debug=True):
+    """
+
+    http://docs.astropy.org/en/stable/io/fits/
+
+    read with astropy.Table and astropy.io.fits
+
+
+    """
+
+    from astropy.io import fits
+
+    # read with astropy.io.fits
+    hdulist = fits.open(infile)
+    hdulist.info()
+
+    # read astropy.Table
+    table = Table.read(infile)
+    help(table)
+
+    # read the header using astropy.io.fits
+    # returns a HDUList object
+    # see also http://docs.astropy.org/en/stable/io/fits/api/headers.htm
+    hdulist = fits.open(infile)
+    help(hdulist)
+    print('type(hdulist):', type(hdulist))
+    print('Number of HDUs:', len(hdulist))
+    print('hdulist.filename:', hdulist.filename())
+
+    if debug:
+        raw_input("Enter any key to continue: ")
+        print('hdulist.info():', hdulist.info())
+        raw_input("Enter any key to continue: ")
+
+    header = hdulist[1].header
+    print('type(header):', type(header))
+
+    if debug:
+        raw_input("Enter any key to continue: ")
+
+    help(header)
+
+    fitscolumns = header.columns
+    fitscolumns.info()
+
+    if debug:
+        raw_input("Enter any key to continue: ")
+
+
+    print('loop over the header keywords, values:')
+    for key in header.keys():
+        print(header[key])
+
+
+    sys.exit()
+
+    return
+
 
 def make_hist(xdata=None, column=None, units=None, comment=None,
               waveband=None,
@@ -208,7 +269,7 @@ def make_hist(xdata=None, column=None, units=None, comment=None,
         plt.show()
 
 
-def histograms(datapath=None, filename=None,
+def histograms(datapath=None, filename=None, debug=False,
                columns=None, waveband=None, figpath=None,
                table=None, zoom=False, save=True):
     """
@@ -232,11 +293,31 @@ def histograms(datapath=None, filename=None,
     print('filename:', filename)
 
     t = Table.read(infile)
-    hdr = fits.open(infile)
 
+    # read the header using astropy.io.fits
+    # returns a HDUList object
+    # see also http://docs.astropy.org/en/stable/io/fits/api/headers.htm
+    hdr = fits.open(infile)
+    print('Number of HDUs:', len(hdr))
+    print('filename:', hdr.filename)
+    if debug:
+        raw_input("Enter any key to continue: ")
+
+    help(hdr)
+    header = hdr[1].header
+    help(header)
+    fitscolumns = hdr[1].columns
+    fitscolumns.info()
+
+
+    for key in header.keys():
+        print(header[key])
 
     for (icol, column) in enumerate(columns):
         column_list = list(t.columns)
+        print(t[column].info)
+        print(t[column].meta)
+        print('icol, unit:', icol, t[column].unit)
         print(icol, column, t[column].dtype, waveband)
         print(type(t[column]), type(t[column][0]))
 
@@ -768,7 +849,7 @@ def des_analysis(datapath=None, tilename=None,
 
         histograms(datapath=datapath, filename=filename,
                    columns=columns, waveband=waveband, figpath=figpath,
-                   zoom=True)
+                   zoom=True, debug=DEBUG)
 
     AB_image(datapath, filename_prefix, filename_tail, bands)
 
@@ -794,13 +875,14 @@ def ps1_analysis(datapath=None, filename=None,
 
         histograms(datapath=datapath, filename=filename,
                    columns=columns, figpath=figpath,
-                   waveband=waveband,
+                   waveband=waveband, debug=DEBUG,
                    zoom=True)
 
 
 def generic_analysis(datapath=None, filename=None,
                     columns=None,
                     figpath=None,
+                    explore_header=False,
                     debug=False):
 
 
@@ -813,13 +895,18 @@ def generic_analysis(datapath=None, filename=None,
         print('infile:', infile)
         print('waveband:', waveband)
 
+        if explore_header:
+            raw_input("Enter any key to continue: ")
+            explore_table_header(table=None, infile=infile,
+                debug=DEBUG)
+
         if DEBUG:
             raw_input("Enter any key to continue: ")
 
         histograms(datapath=datapath, filename=filename,
                    columns=columns, figpath=figpath,
                    waveband='',
-                   zoom=True)
+                   zoom=True, debug=DEBUG)
 
 def corner_example(scatter=False):
     # Set up the parameters of the problem.
@@ -1149,12 +1236,11 @@ if __name__ == '__main__':
     print('Elapsed time(secs): ',time.time() - t0)
     t = Table.read(infile)
     print('Elapsed time(secs): ',time.time() - t0)
-    t.meta['filename'] = filename
-    t.meta['filepath'] = datapath
-
+    t.meta['filename'] = infile
 
     t.info()
     t.info('stats')
+    table_stats(table)
 
     columns = t.columns
     print('Number of columns:', len(columns))
@@ -1193,8 +1279,10 @@ if __name__ == '__main__':
             print('Creating:', figpath)
             os.mkdir(figpath)
 
+        explore_header = True
         generic_analysis(datapath=datapath, filename=filename,
                          columns=columns,
+                         explore_header=explore_header,
                          figpath=figpath, debug=DEBUG)
 
     if survey_project == 'DES':
