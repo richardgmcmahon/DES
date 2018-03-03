@@ -172,8 +172,8 @@ def plot_compass_arrow(AstWCS=None, direction='NS',
 
         plt.plot([-10.0,10.0], [-10.0, 10.0], '.r')
 
-    xrange = 20
-    yrange = 20
+    xrange = 5
+    yrange = 5
 
     xarrow = 0.0
     yarrow = 0.0
@@ -750,6 +750,9 @@ def edgedetection(image=None):
 
 
 def plot_radec_descat(data=None,
+                      radec_centre=None,
+                      xrange = [-2.5, 2.5],
+                      yrange = [-2.5, 2.5],
                       wavebands=['g', 'r', 'i', 'z', 'y'],
                       coadd=True, multiBand=True,
                       singleEpoch=False,
@@ -764,6 +767,7 @@ def plot_radec_descat(data=None,
     if debug:
         data.info()
         data.info('stats')
+        print('zoom:', zoom)
         print('filename:', data.meta['filename'])
         print('ra0', ra0)
         print('dec0', dec0)
@@ -772,9 +776,6 @@ def plot_radec_descat(data=None,
 
     itest = np.unique(data['TILENAME'])
     print('Tiles:', itest)
-
-    if debug:
-        key=raw_input("Enter any key to continue: ")
 
     ra = data['RA']
     dec = data['DEC']
@@ -789,7 +790,8 @@ def plot_radec_descat(data=None,
     if debug:
         print('ra_min:', ra_min)
         print('ra_max:', ra_max)
-        print('Delta RA:', delta_ra_)
+        print('Delta RA range:',
+              np.min(delta_ra), np.max(delta_ra))
 
     dec_min = np.min(dec)
     dec_max = np.max(dec)
@@ -798,11 +800,15 @@ def plot_radec_descat(data=None,
     if debug:
         print('dec_min:', dec_min)
         print('dec_max:', dec_max)
-        print('Delta Dec:', delta_dec)
+        print('Delta Dec range:',
+              np.min(delta_dec), np.max(delta_dec))
+
+    if debug:
+        key=raw_input("Enter any key to continue: ")
 
 
-    xdata= delta_ra
-    ydata= delta_dec
+    xdata = delta_ra
+    ydata = delta_dec
 
     print(xrange)
     print(yrange)
@@ -815,11 +821,10 @@ def plot_radec_descat(data=None,
 
     plt.figure(figsize=(8,8))
     plt.axes().set_aspect('equal')
-    plt.plot(delta_ra, delta_dec, '.k', label='COADD: '+str(ndata))
+    plt.plot(xdata, ydata, '.k', label='COADD: '+str(ndata))
 
-    if zoom:
-        plt.xlim(xrange)
-        plt.ylim(yrange)
+    plt.xlim(xrange)
+    plt.ylim(yrange)
 
     plt.title(infile, fontsize='medium')
     plt.grid(True)
@@ -971,7 +976,85 @@ def plot_radec_descat(data=None,
 
     plt.show()
 
-    return
+    return plt
+
+
+def plot_radec_wisecat(data=None,
+                       radec_centre=None,
+                       xrange = [-2.5, 2.5],
+                       yrange = [-2.5, 2.5],
+                       overplot=True,
+                       debug=False):
+    """
+
+
+    """
+    print('filename:', data.meta['filename'])
+
+    print('Number of rows:', len(data))
+    if debug:
+        data.info()
+        data.info('stats')
+        print('zoom:', zoom)
+        print('filename:', data.meta['filename'])
+        print('ra0', ra0)
+        print('dec0', dec0)
+        print('xrange:', xrange)
+        print('yrange:', yrange)
+
+    ra = data['RAJ2000']
+    dec = data['DEJ2000']
+
+    ra_min = np.min(ra)
+    ra_max = np.max(ra)
+    delta_ra = (ra - ra0) * 3600.0 * np.cos(np.deg2rad(dec0))
+
+    if debug:
+        print('ra_min:', ra_min)
+        print('ra_max:', ra_max)
+        print('Delta RA range:',
+              np.min(delta_ra), np.max(delta_ra))
+
+    dec_min = np.min(dec)
+    dec_max = np.max(dec)
+    delta_dec = (dec - dec0) * 3600.0
+
+    if debug:
+        print('dec_min:', dec_min)
+        print('dec_max:', dec_max)
+        print('Delta Dec range:',
+              np.min(delta_dec), np.max(delta_dec))
+
+    if debug:
+        key=raw_input("Enter any key to continue: ")
+
+
+    xdata = delta_ra
+    ydata = delta_dec
+
+    print(xrange)
+    print(yrange)
+    itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
+            (ydata > yrange[0]) & (ydata < yrange[1])
+
+    xdata = xdata[itest]
+    ydata = ydata[itest]
+    ndata = len(xdata)
+
+    if not overplot:
+        plt.figure(figsize=(8,8))
+        plt.axes().set_aspect('equal')
+
+    plt.plot(xdata, ydata, 'o', color='red',
+             label='WISE: '+str(ndata))
+
+    plt.xlim(xrange)
+    plt.ylim(yrange)
+
+    plt.show()
+
+    return plt
+
 
 
 
@@ -1005,55 +1088,69 @@ def getargs():
     parser.set_defaults(source='VDESJ2325-5229')
     parser.add_argument("--source",
                         help="source  as a string")
-
     parser.set_defaults(band='i')
     parser.add_argument("--band",
                         help="waveband [g, r, i, z, Y]")
 
+    parser.set_defaults(wise=False)
+    parser.add_argument("--wise", action='store_true',
+        help="wise overplot option")
+
     parser.set_defaults(cutout=False)
     parser.add_argument("--cutout", action='store_true',
-        dest='cutout', help="cutout option")
-
-    parser.set_defaults(debug=False)
-    parser.add_argument("--debug", action='store_true',
-        dest='debug', help="debug option")
+        help="cutout option")
 
     parser.set_defaults(list=False)
     parser.add_argument("--list", action='store_true',
-        dest='list', help="list the lenses")
+        help="list the lenses")
 
     parser.add_argument("--plotimages", action='store_true',
         default=False, help="plot images option")
 
-    parser.add_argument("--showplots", action='store_true', default=False,
+    parser.add_argument("--showplots",
+                        action='store_true',
+                        default=False,
                         help="showplots option")
 
     # 38 pixels is 10 arcsec in DES Y1A1 image with
     # single epoch pixel size 0.267 arcsec/pixel
-    parser.add_argument("--size", type=int, default=10,
+    parser.add_argument("--size",
+                        type=int,
+                        default=10,
                         help="Size in arcsecs")
 
-    parser.add_argument("--zoom_size", type=int, default=5,
+    parser.add_argument("--zoom_size",
+                        type=int,
+                        default=5,
                         help="Zoom in size in arcsecs")
 
-    parser.add_argument("--size_pixels", type=int, default=38,
+    parser.add_argument("--size_pixels",
+                        type=int,
+                        default=38,
                         help="Size in pixels")
 
-    parser.add_argument("--edgedetection", action='store_true',
-        default=False, help="Segmentation map edge detection  option")
+    parser.add_argument("--edgedetection",
+                        action='store_true',
+                        default=False,
+                        help="Segmentation map edge detection  option")
 
-    parser.set_defaults(verbose=False)
-    parser.add_argument("--verbose", action='store_true',
-        dest='verbose', help="verbose option")
 
-    parser.set_defaults(verbose=False)
+    parser.set_defaults(zoom=False)
     parser.add_argument("--zoom", action='store_true',
                         default=False, help="zoom option")
-
 
     parser.set_defaults(xkcd=False)
     parser.add_argument("--xkcd", action='store_true',
         dest='xkcd', help="xkcd cartoon plot style")
+
+    parser.set_defaults(debug=False)
+    parser.add_argument("--debug",
+                        action='store_true',
+                        help="debug option")
+
+    parser.set_defaults(verbose=False)
+    parser.add_argument("--verbose", action='store_true',
+        dest='verbose', help="verbose option")
 
     args = parser.parse_args()
 
@@ -1063,9 +1160,11 @@ def getargs():
 
 if __name__ == "__main__":
 
+    import pprint
+
+    # TODO
     # plot_compass_arrow(direction='NS', length=2.0)
     # key=raw_input("Enter any key to continue: ")
-
 
     import configparser
 
@@ -1073,14 +1172,17 @@ if __name__ == "__main__":
     config.read('VDESJ2325-5229_analysis.cfg')
 
     args = getargs()
+    debug = args.debug
+    print('debug: ', debug)
+    if debug:
+        pprint.pprint(args)
+        key = raw_input("Enter any key to continue: ")
 
     cutout = args.cutout
 
     BAND = args.band
     print('band: ', BAND)
 
-    debug = args.debug
-    print('debug: ', debug)
 
     format = args.format
     print('format: ', format)
@@ -1111,21 +1213,12 @@ if __name__ == "__main__":
     # debug the list of lenses in the config file
     list_lenses()
 
-    key=raw_input("Enter any key to continue: ")
+    key = raw_input("Enter any key to continue: ")
 
     # cutout size in arc seconds
-    size_cutout = 30.0
-
-    # zoom size for ra, dec plots in arc seconds
-    size_zoom = 6.0
-    size_zoom = 10.0
-    #size_zoom = 15.0
-    size_zoom = args.zoom_size
-
-
-    size = 100
-    size = 38
-    size = args.size_pixels
+    size = args.size
+    # size_zoom = args.zoom_size
+    # size = args.size_pixels
 
     xrange = [-size/2.0, size/2.0]
     yrange = [-size/2.0, size/2.0]
@@ -1143,6 +1236,9 @@ if __name__ == "__main__":
     if format.upper() == 'WISE2DES':
         datapath_wise2des = config.get(source, 'datapath_wise2des')
 
+    filename_wise = None
+    if args.wise:
+        filename_wise = config.get(source, 'filename_wise')
 
     datapath_cats = config.get(source, 'datapath_cats')
     print('datapath_cats:', datapath_cats)
@@ -1177,12 +1273,13 @@ if __name__ == "__main__":
     dec0 = dec
 
     datapath = datapath_desroot + '/' + source + '/'
+    filename_coadd = RELEASE + '_COADD_OBJECTS_' + source + '.fits'
+    print(config.has_option(source,' filename_se'))
+    if config.has_option(source, 'filename_se'):
+        filename_SingleEpoch = config.get(source, 'filename_se')
+        print('filename_se:', filename_SingleEpoch)
 
-    filename_COADD = RELEASE + '_COADD_OBJECTS_' + source + '.fits'
-
-    filename_SingleEpoch = config.get(source,'filename_se')
     # filename_SingleEpoch ='Y1A1_SE_' + source + '.fits'
-
     # ra =   ra + (1.0/3600.0)
     # dec =  dec - (1.0/3600.0)
 
@@ -1234,7 +1331,7 @@ if __name__ == "__main__":
         infile = datapath + filename_SingleEpoch
 
     if format == 'COADD':
-        infile = datapath + filename_COADD
+        infile = datapath + filename_coadd
 
     if format.upper() == 'WISE2DES':
         tilename = 'DES0406-5414'
@@ -1247,6 +1344,20 @@ if __name__ == "__main__":
 
     inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
     print('inpath: ', inpath)
+
+
+    if debug:
+        print('filename_wise:', filename_wise)
+        key=raw_input("Enter any key to continue: ")
+
+    if filename_wise is not None:
+        wisedata = Table.read(filename_wise)
+        wisedata.meta['filename'] = filename_wise
+        print(len(wisedata))
+        wisedata.info('stats')
+        if debug:
+            key=raw_input("Enter any key to continue: ")
+
 
 
     print('args.edgedetection:', args.edgedetection)
@@ -1289,6 +1400,7 @@ if __name__ == "__main__":
     catdata = Table.read(catfile)
     print(catdata.colnames)
     catdata.info('stats')
+
 
     if plotimages:
         # fz format
@@ -1590,13 +1702,20 @@ if __name__ == "__main__":
 
     if format == 'COADD':
 
-        plot_radec_descat(data=data,
-                          coadd=True, multiBand=True,
-                          singleEpoch=False)
+        plt = plot_radec_descat(data=data,
+                                radec_centre=(ra0, dec0),
+                                xrange=xrange,
+                                yrange=yrange,
+                                coadd=True, multiBand=True,
+                                singleEpoch=False)
 
+        if filename_wise is not None:
+            plt = plot_radec_wisecat(data=wisedata,
+                                     radec_centre=(ra0, dec0),
+                                     xrange=xrange,
+                                     yrange=yrange)
 
     if format.upper() == 'WISE2DES':
-
         ra = data['RA_CALC_I']
         dec = data['DEC_CALC_I']
 
