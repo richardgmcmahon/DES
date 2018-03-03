@@ -756,22 +756,12 @@ def explore_wise2des(data=None):
 
     """
 
+def getargs():
+    """
 
-if __name__ == "__main__":
-
-
-    # plot_compass_arrow(direction='NS', length=2.0)
-    # key=raw_input("Enter any key to continue: ")
-
+    """
 
     import argparse
-
-    import configparser
-
-    from matplotlib import pyplot as plt
-
-    config = configparser.RawConfigParser()
-    config.read('VDESJ2325-5229_analysis.cfg')
 
     description = ''
     epilog = ''
@@ -782,19 +772,19 @@ if __name__ == "__main__":
 
     format_default = 'COADD'
     parser.add_argument("--format", default=format_default,
-        dest='format', help="format as SE or COADD [Default]")
+        help="format as SE or COADD [Default]")
 
     release_default = 'Y1A1'
     parser.add_argument("--release", default=release_default,
-        dest='release', help="release  as a string e.g. Y1A1 [Default]")
+        help="release  as a string e.g. Y1A1 [Default]")
 
     parser.set_defaults(source='VDESJ2325-5229')
-    parser.add_argument("--source", dest='source',
-        help="source  as a string e.g. VDESJ2325-5229 [Default]")
+    parser.add_argument("--source",
+                        help="source  as a string")
 
     parser.set_defaults(band='i')
     parser.add_argument("--band",
-        dest='band', help="waveband g, r, i, z, Y e.g. i [Default]")
+                        help="waveband [g, r, i, z, Y]")
 
     parser.set_defaults(cutout=False)
     parser.add_argument("--cutout", action='store_true',
@@ -836,6 +826,28 @@ if __name__ == "__main__":
         dest='xkcd', help="xkcd cartoon plot style")
 
     args = parser.parse_args()
+
+    return args
+
+
+
+if __name__ == "__main__":
+
+
+    # plot_compass_arrow(direction='NS', length=2.0)
+    # key=raw_input("Enter any key to continue: ")
+
+
+
+
+    import configparser
+
+    from matplotlib import pyplot as plt
+
+    config = configparser.RawConfigParser()
+    config.read('VDESJ2325-5229_analysis.cfg')
+
+    args = getargs()
 
     cutout = args.cutout
 
