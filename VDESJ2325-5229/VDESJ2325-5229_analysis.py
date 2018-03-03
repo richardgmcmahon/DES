@@ -2,7 +2,7 @@
 
 WARNING: This currently does not work near 24hrs
 
-RADEC_SOURCE_BAND in COADD table specifies the band used for RA, Dec in
+RADEC_SOURCE_BAND in COADD table spcifies the band used for RA, Dec in
 table; need to check this.
 
 also look at desdb for downloading on the fly option
@@ -749,6 +749,230 @@ def edgedetection(image=None):
     axs[1,1].contour(edgey2,2,colors='g',lw=2.)
 
 
+def plot_radec_descat(data=None,
+                      wavebands=['g', 'r', 'i', 'z', 'y'],
+                      coadd=True, multiBand=True,
+                      singleEpoch=False,
+                      debug=True):
+    """
+
+
+    """
+    print('filename:', data.meta['filename'])
+
+    print('Number of rows:', len(data))
+    if debug:
+        data.info()
+        data.info('stats')
+        print('filename:', data.meta['filename'])
+        print('ra0', ra0)
+        print('dec0', dec0)
+        print('xrange:', xrange)
+        print('yrange:', yrange)
+
+    itest = np.unique(data['TILENAME'])
+    print('Tiles:', itest)
+
+    if debug:
+        key=raw_input("Enter any key to continue: ")
+
+    ra = data['RA']
+    dec = data['DEC']
+
+    COADD_OBJECTS_ID = data['COADD_OBJECTS_ID']
+
+    ra_min = np.min(ra)
+    ra_max = np.max(ra)
+    # convert to arc seconds
+    delta_ra = (ra - ra0) * 3600.0 * np.cos(np.deg2rad(dec0))
+
+    if debug:
+        print('ra_min:', ra_min)
+        print('ra_max:', ra_max)
+        print('Delta RA:', delta_ra_)
+
+    dec_min = np.min(dec)
+    dec_max = np.max(dec)
+    delta_dec = (dec - dec0) * 3600.0
+
+    if debug:
+        print('dec_min:', dec_min)
+        print('dec_max:', dec_max)
+        print('Delta Dec:', delta_dec)
+
+
+    xdata= delta_ra
+    ydata= delta_dec
+
+    print(xrange)
+    print(yrange)
+    itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
+            (ydata > yrange[0]) & (ydata < yrange[1])
+
+    xdata = xdata[itest]
+    ydata = ydata[itest]
+    ndata = len(xdata)
+
+    plt.figure(figsize=(8,8))
+    plt.axes().set_aspect('equal')
+    plt.plot(delta_ra, delta_dec, '.k', label='COADD: '+str(ndata))
+
+    if zoom:
+        plt.xlim(xrange)
+        plt.ylim(yrange)
+
+    plt.title(infile, fontsize='medium')
+    plt.grid(True)
+
+    WAVEBANDS = ['G','R','I','Z','Y']
+
+    print("id, object_id, WAVEBAND, NEPOCHS, MAG_AUTO, " + \
+              "Dra, Ddec, " + \
+              "FLUX_RADIUS, KRON_RADIUS, " + \
+              "A, B, PA, Aspect Ratio(A/B)")
+
+    iband = -1
+    for WAVEBAND in WAVEBANDS:
+        iband = iband + 1
+        ra = data['ALPHAWIN_J2000_'+WAVEBAND]
+        dec = data['DELTAWIN_J2000_'+WAVEBAND]
+
+        # used to convert pixels to arc seconds
+        PIXEL_SIZE=0.27
+
+        delta_ra = (ra - ra0)*3600.0 * np.cos(np.deg2rad(dec0))
+        delta_dec = (dec - dec0)*3600.0
+
+        xdata= delta_ra
+        ydata= delta_dec
+
+        # limit the data
+        itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
+            (ydata > yrange[0]) & (ydata < yrange[1])
+
+        xdata = xdata[itest]
+        ydata = ydata[itest]
+        ndata = len(xdata)
+
+        delta_ra = delta_ra[itest]
+        delta_dec = delta_dec[itest]
+
+        # maybe combine this with the assignment above
+        COADD_OBJECTS_ID = data['COADD_OBJECTS_ID'][itest]
+        OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
+        RADEC_SOURCE_BAND = data['RADEC_SOURCE_BAND'][itest]
+
+        # Detection image
+        A_IMAGE = data['A_IMAGE'][itest]*PIXEL_SIZE
+        B_IMAGE = data['B_IMAGE'][itest]*PIXEL_SIZE
+        THETA_IMAGE = data['THETA_IMAGE'][itest]
+
+        KRON_RADIUS = data['KRON_RADIUS'][itest]*PIXEL_SIZE
+
+        XMIN_IMAGE=data['XMIN_IMAGE'][itest]
+        XMAX_IMAGE=data['XMAX_IMAGE'][itest]
+        YMIN_IMAGE=data['YMIN_IMAGE'][itest]
+        YMAX_IMAGE=data['YMAX_IMAGE'][itest]
+
+        # Measurement image
+        ALPHAWIN_J2000 = data['ALPHAWIN_J2000_'+WAVEBAND][itest]
+        DELTAWIN_J2000 = data['DELTAWIN_J2000_'+WAVEBAND][itest]
+        XWIN_IMAGE = data['XWIN_IMAGE_'+WAVEBAND][itest]
+        YWIN_IMAGE = data['YWIN_IMAGE_'+WAVEBAND][itest]
+
+        NEPOCHS = data['NEPOCHS_'+WAVEBAND][itest]
+        MAG_AUTO = data['MAG_AUTO_'+WAVEBAND][itest]
+        FLUX_RADIUS = data['FLUX_RADIUS_'+WAVEBAND][itest]*PIXEL_SIZE
+
+        AWIN_IMAGE = data['AWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
+        BWIN_IMAGE = data['BWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
+        THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+WAVEBAND][itest]
+
+        ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_'+WAVEBAND][itest]
+        ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_'+WAVEBAND][itest]
+
+        FWHM_WORLD = data['FWHM_WORLD_'+WAVEBAND][itest]
+
+        ISOAREA_WORLD = data['ISOAREA_WORLD_'+WAVEBAND][itest]
+
+        FLAGS = data['FLAGS_'+WAVEBAND][itest]
+
+        alpha=0.1
+        i =-1
+
+        for id in xdata:
+            i = i + 1
+
+            circle = Circle([delta_ra[i], delta_dec[i]], 0.25,
+                edgecolor='none', facecolor=colors[iband], alpha=alpha)
+            plt.gca().add_patch(circle)
+
+            width = AWIN_IMAGE[i]
+            height = BWIN_IMAGE[i]
+            angle = THETAWIN_IMAGE[i] + 90.0
+            coadd_objects_id = COADD_OBJECTS_ID[i]
+
+            print(i, coadd_objects_id,
+                OBJECT_NUMBER[i],
+                WAVEBAND,
+                RADEC_SOURCE_BAND[i],
+                "{:4d}".format(NEPOCHS[i]),
+                "{:8.2f}".format(MAG_AUTO[i]),
+                "{:6.2f}".format(delta_ra[i]),
+                "{:6.2f}".format(delta_dec[i]),
+                "{:6.2f}".format(FLUX_RADIUS[i]),
+                "{:6.2f}".format(KRON_RADIUS[i]),
+                "{:6.2f}".format(width),
+                "{:6.2f}".format(height),
+                "{:7.1f}".format(angle),
+                "{:6.3f}".format(width/height))
+
+            print(i, coadd_objects_id,
+                OBJECT_NUMBER[i],
+                WAVEBAND,
+                "{:8.2f}".format(A_IMAGE[i]),
+                "{:8.2f}".format(B_IMAGE[i]),
+                "{:7.1f}".format(THETA_IMAGE[i]))
+
+            print(i, coadd_objects_id,
+                OBJECT_NUMBER[i],
+                WAVEBAND,
+                "{:7.1f}".format(XWIN_IMAGE[i]),
+                "{:7.1f}".format(YWIN_IMAGE[i]),
+                "{:7.1f}".format(XMIN_IMAGE[i]),
+                "{:7.1f}".format(XMAX_IMAGE[i]),
+                "{:7.1f}".format(YMIN_IMAGE[i]),
+                "{:7.1f}".format(YMAX_IMAGE[i]),
+                "{:5.1f}".format(XMAX_IMAGE[i]-XMIN_IMAGE[i]),
+                "{:5.1f}".format(YMAX_IMAGE[i]-YMIN_IMAGE[i]),
+                "{:7.1f}".format((XMIN_IMAGE[i]+XMAX_IMAGE[i])/2.0),
+                "{:7.1f}".format((YMIN_IMAGE[i]+YMAX_IMAGE[i])/2.0),
+                "{:4d}".format(FLAGS[i]))
+
+            ellipse = Ellipse([delta_ra[i], delta_dec[i]],
+                width=width/2.0, height=height/2.0, angle=angle,
+                edgecolor='none', facecolor=colors[iband], alpha=alpha)
+            plt.gca().add_patch(ellipse)
+
+        plt.plot(delta_ra, delta_dec, '.', color=colors[iband],
+            label=WAVEBAND + ': ' + str(ndata))
+
+    plt.suptitle('Windowed positions')
+
+    plt.xlabel('Delta RA (arc seconds)')
+    plt.ylabel('Delta Dec (arc seconds)')
+    plt.legend(fontsize='medium')
+    plotid(progname=True)
+
+    plotfile = source + '_COADD_radec_zoom.png'
+    plt.savefig(plotfile)
+    #plt.clf()
+    print('Saving: ', plotfile)
+
+    plt.show()
+
+    return
+
 
 
 def explore_wise2des(data=None):
@@ -804,8 +1028,14 @@ def getargs():
     parser.add_argument("--showplots", action='store_true', default=False,
                         help="showplots option")
 
-    # 38 pixels is 10 aecsec in DES Y1A1 image with
-    # pixel size 0.267 arcsec/pixel
+    # 38 pixels is 10 arcsec in DES Y1A1 image with
+    # single epoch pixel size 0.267 arcsec/pixel
+    parser.add_argument("--size", type=int, default=10,
+                        help="Size in arcsecs")
+
+    parser.add_argument("--zoom_size", type=int, default=5,
+                        help="Zoom in size in arcsecs")
+
     parser.add_argument("--size_pixels", type=int, default=38,
                         help="Size in pixels")
 
@@ -833,16 +1063,11 @@ def getargs():
 
 if __name__ == "__main__":
 
-
     # plot_compass_arrow(direction='NS', length=2.0)
     # key=raw_input("Enter any key to continue: ")
 
 
-
-
     import configparser
-
-    from matplotlib import pyplot as plt
 
     config = configparser.RawConfigParser()
     config.read('VDESJ2325-5229_analysis.cfg')
@@ -895,21 +1120,23 @@ if __name__ == "__main__":
     size_zoom = 6.0
     size_zoom = 10.0
     #size_zoom = 15.0
+    size_zoom = args.zoom_size
+
 
     size = 100
     size = 38
-    size= args.size_pixels
+    size = args.size_pixels
 
-    xrange=[-size/2.0, size/2.0]
-    yrange=[-size/2.0, size/2.0]
+    xrange = [-size/2.0, size/2.0]
+    yrange = [-size/2.0, size/2.0]
 
     # colours to use for grizY plots
     colors=['blue','green','orange','red', 'maroon']
 
     RELEASE = 'Y1A1'
 
-    print('RELEASE: ', RELEASE)
-    print('SOURCE: ', source)
+    print('RELEASE:', RELEASE)
+    print('SOURCE:', source)
 
     datapath_desroot = config.get(source, 'datapath_desroot')
 
@@ -918,12 +1145,12 @@ if __name__ == "__main__":
 
 
     datapath_cats = config.get(source, 'datapath_cats')
-    # datapath_cats =   /data/des/VDESJ2325-5229/
-    # datapath = '/home/rgm/soft/des/easyaccess/'
+    print('datapath_cats:', datapath_cats)
 
     radec_format = config.get(source, 'radec_format')
 
     TILENAME = config.get(source, 'tilename')
+    print('tilename:', TILENAME)
 
     ra = config.get(source,'ra')
     dec = config.get(source,'dec')
@@ -1126,6 +1353,8 @@ if __name__ == "__main__":
     print('format: ', format)
     print('Reading file: ', infile)
     data = Table.read(infile)
+    data.meta['filename'] = infile
+
     print(data.colnames)
     data.info('stats')
 
@@ -1361,189 +1590,10 @@ if __name__ == "__main__":
 
     if format == 'COADD':
 
-        itest=np.unique(data['TILENAME'])
-        print(itest)
-        ra = data['RA']
-        dec = data['DEC']
-        COADD_OBJECTS_ID = data['COADD_OBJECTS_ID']
+        plot_radec_descat(data=data,
+                          coadd=True, multiBand=True,
+                          singleEpoch=False)
 
-        ra_min = np.min(ra)
-        ra_max = np.max(ra)
-        delta_ra = (ra - ra0)*3600.0 * np.cos(np.deg2rad(dec0))
-
-        dec_min = np.min(dec)
-        dec_max = np.max(dec)
-        delta_dec = (dec - dec0)*3600.0
-
-        xdata= delta_ra
-        ydata= delta_dec
-
-        print(xrange)
-        print(yrange)
-        itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
-                (ydata > yrange[0]) & (ydata < yrange[1])
-
-        xdata = xdata[itest]
-        ydata = ydata[itest]
-        ndata = len(xdata)
-
-        plt.figure(figsize=(8,8))
-        plt.axes().set_aspect('equal')
-        plt.plot(delta_ra, delta_dec, '.k', label='COADD: '+str(ndata))
-
-        if zoom:
-            plt.xlim(xrange)
-            plt.ylim(yrange)
-
-        plt.title(infile, fontsize='medium')
-        plt.grid(True)
-
-        WAVEBANDS = ['G','R','I','Z','Y']
-
-        print("id, object_id, WAVEBAND, NEPOCHS, MAG_AUTO, " + \
-                  "Dra, Ddec, " + \
-                  "FLUX_RADIUS, KRON_RADIUS, " + \
-                  "A, B, PA, Aspect Ratio(A/B)")
-
-        iband = -1
-        for WAVEBAND in WAVEBANDS:
-            iband = iband + 1
-            ra = data['ALPHAWIN_J2000_'+WAVEBAND]
-            dec = data['DELTAWIN_J2000_'+WAVEBAND]
-
-            # used to convert pixels to arc seconds
-            PIXEL_SIZE=0.27
-
-            delta_ra = (ra - ra0)*3600.0 * np.cos(np.deg2rad(dec0))
-            delta_dec = (dec - dec0)*3600.0
-
-            xdata= delta_ra
-            ydata= delta_dec
-
-            # limit the data
-            itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
-                (ydata > yrange[0]) & (ydata < yrange[1])
-
-            xdata = xdata[itest]
-            ydata = ydata[itest]
-            ndata = len(xdata)
-
-            delta_ra = delta_ra[itest]
-            delta_dec = delta_dec[itest]
-
-            # maybe combine this with the assignment above
-            COADD_OBJECTS_ID = data['COADD_OBJECTS_ID'][itest]
-            OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
-            RADEC_SOURCE_BAND = data['RADEC_SOURCE_BAND'][itest]
-
-            # Detection image
-            A_IMAGE = data['A_IMAGE'][itest]*PIXEL_SIZE
-            B_IMAGE = data['B_IMAGE'][itest]*PIXEL_SIZE
-            THETA_IMAGE = data['THETA_IMAGE'][itest]
-
-            KRON_RADIUS = data['KRON_RADIUS'][itest]*PIXEL_SIZE
-
-            XMIN_IMAGE=data['XMIN_IMAGE'][itest]
-            XMAX_IMAGE=data['XMAX_IMAGE'][itest]
-            YMIN_IMAGE=data['YMIN_IMAGE'][itest]
-            YMAX_IMAGE=data['YMAX_IMAGE'][itest]
-
-            # Measurement image
-            ALPHAWIN_J2000 = data['ALPHAWIN_J2000_'+WAVEBAND][itest]
-            DELTAWIN_J2000 = data['DELTAWIN_J2000_'+WAVEBAND][itest]
-            XWIN_IMAGE = data['XWIN_IMAGE_'+WAVEBAND][itest]
-            YWIN_IMAGE = data['YWIN_IMAGE_'+WAVEBAND][itest]
-
-            NEPOCHS = data['NEPOCHS_'+WAVEBAND][itest]
-            MAG_AUTO = data['MAG_AUTO_'+WAVEBAND][itest]
-            FLUX_RADIUS = data['FLUX_RADIUS_'+WAVEBAND][itest]*PIXEL_SIZE
-
-            AWIN_IMAGE = data['AWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
-            BWIN_IMAGE = data['BWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
-            THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+WAVEBAND][itest]
-
-            ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_'+WAVEBAND][itest]
-            ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_'+WAVEBAND][itest]
-
-            FWHM_WORLD = data['FWHM_WORLD_'+WAVEBAND][itest]
-
-            ISOAREA_WORLD = data['ISOAREA_WORLD_'+WAVEBAND][itest]
-
-            FLAGS = data['FLAGS_'+WAVEBAND][itest]
-
-            alpha=0.1
-            i =-1
-
-            for id in xdata:
-                i = i + 1
-
-                circle = Circle([delta_ra[i], delta_dec[i]], 0.25,
-                    edgecolor='none', facecolor=colors[iband], alpha=alpha)
-                plt.gca().add_patch(circle)
-
-                width = AWIN_IMAGE[i]
-                height = BWIN_IMAGE[i]
-                angle = THETAWIN_IMAGE[i] + 90.0
-                coadd_objects_id = COADD_OBJECTS_ID[i]
-
-                print(i, coadd_objects_id,
-                    OBJECT_NUMBER[i],
-                    WAVEBAND,
-                    RADEC_SOURCE_BAND[i],
-                    "{:4d}".format(NEPOCHS[i]),
-                    "{:8.2f}".format(MAG_AUTO[i]),
-                    "{:6.2f}".format(delta_ra[i]),
-                    "{:6.2f}".format(delta_dec[i]),
-                    "{:6.2f}".format(FLUX_RADIUS[i]),
-                    "{:6.2f}".format(KRON_RADIUS[i]),
-                    "{:6.2f}".format(width),
-                    "{:6.2f}".format(height),
-                    "{:7.1f}".format(angle),
-                    "{:6.3f}".format(width/height))
-
-                print(i, coadd_objects_id,
-                    OBJECT_NUMBER[i],
-                    WAVEBAND,
-                    "{:8.2f}".format(A_IMAGE[i]),
-                    "{:8.2f}".format(B_IMAGE[i]),
-                    "{:7.1f}".format(THETA_IMAGE[i]))
-
-                print(i, coadd_objects_id,
-                    OBJECT_NUMBER[i],
-                    WAVEBAND,
-                    "{:7.1f}".format(XWIN_IMAGE[i]),
-                    "{:7.1f}".format(YWIN_IMAGE[i]),
-                    "{:7.1f}".format(XMIN_IMAGE[i]),
-                    "{:7.1f}".format(XMAX_IMAGE[i]),
-                    "{:7.1f}".format(YMIN_IMAGE[i]),
-                    "{:7.1f}".format(YMAX_IMAGE[i]),
-                    "{:5.1f}".format(XMAX_IMAGE[i]-XMIN_IMAGE[i]),
-                    "{:5.1f}".format(YMAX_IMAGE[i]-YMIN_IMAGE[i]),
-                    "{:7.1f}".format((XMIN_IMAGE[i]+XMAX_IMAGE[i])/2.0),
-                    "{:7.1f}".format((YMIN_IMAGE[i]+YMAX_IMAGE[i])/2.0),
-                    "{:4d}".format(FLAGS[i]))
-
-                ellipse = Ellipse([delta_ra[i], delta_dec[i]],
-                    width=width/2.0, height=height/2.0, angle=angle,
-                    edgecolor='none', facecolor=colors[iband], alpha=alpha)
-                plt.gca().add_patch(ellipse)
-
-            plt.plot(delta_ra, delta_dec, '.', color=colors[iband],
-                label=WAVEBAND + ': ' + str(ndata))
-
-        plt.suptitle('Windowed positions')
-
-        plt.xlabel('Delta RA (arc seconds)')
-        plt.ylabel('Delta Dec (arc seconds)')
-        plt.legend(fontsize='medium')
-        plotid(progname=True)
-
-        plotfile = source + '_COADD_radec_zoom.png'
-        plt.savefig(plotfile)
-        #plt.clf()
-        print('Saving: ', plotfile)
-
-        plt.show()
 
     if format.upper() == 'WISE2DES':
 
