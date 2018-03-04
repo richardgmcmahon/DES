@@ -173,10 +173,11 @@ def plot_radec_descat(data=None,
         alpha=0.1
         i =-1
 
+        radius = 0.7
         for id in xdata:
             i = i + 1
 
-            circle = Circle([delta_ra[i], delta_dec[i]], 0.25,
+            circle = Circle([delta_ra[i], delta_dec[i]], radius,
                 edgecolor='none', facecolor=colors[iband], alpha=alpha)
             plt.gca().add_patch(circle)
 
