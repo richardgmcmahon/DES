@@ -99,6 +99,12 @@ def plot_radec_wisecat(data=None,
     plt.xlim(xrange)
     plt.ylim(yrange)
 
+    plotfile = source + '_COADD_radec.png'
+    plt.savefig(plotfile)
+    #plt.clf()
+    print('Saving: ', plotfile)
+
+
     if showplot:
         plt.show()
 

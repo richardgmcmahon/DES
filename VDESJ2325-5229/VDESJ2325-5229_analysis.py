@@ -1408,6 +1408,7 @@ if __name__ == "__main__":
 
         if filename_wise is not None:
             plt = plot_radec_wisecat(data=wisedata,
+                                     source=source,
                                      radec_centre=(ra0, dec0),
                                      xrange=xrange,
                                      yrange=yrange,

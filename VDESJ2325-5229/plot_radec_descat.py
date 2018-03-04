@@ -237,7 +237,7 @@ def plot_radec_descat(data=None,
     plt.legend(fontsize='medium')
     plotid()
 
-    plotfile = source + '_COADD_radec_zoom.png'
+    plotfile = source + '_COADD_radec.png'
     plt.savefig(plotfile)
     #plt.clf()
     print('Saving: ', plotfile)
