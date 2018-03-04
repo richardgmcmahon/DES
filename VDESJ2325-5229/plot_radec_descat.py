@@ -6,16 +6,21 @@ from librgm.plotid import plotid
 
 def plot_radec_descat(data=None,
                       source=None,
+                      radius = 0.45,
                       radec_centre=None,
                       xrange = [-2.5, 2.5],
                       yrange = [-2.5, 2.5],
                       wavebands=['g', 'r', 'i', 'z', 'y'],
-                      coadd=True, multiBand=True,
+                      coadd=True,
+                      multiBand=True,
                       singleEpoch=False,
                       showplot=False,
+                      explore_shapepars=False,
                       debug=True):
     """
 
+    plot the DES catalogue sources. The DES catalogues use Sextractor for
+    source detection and measurement.
 
     """
 
@@ -103,14 +108,15 @@ def plot_radec_descat(data=None,
               "FLUX_RADIUS, KRON_RADIUS, " + \
               "A, B, PA, Aspect Ratio(A/B)")
 
-    iband = -1
-    for WAVEBAND in WAVEBANDS:
-        iband = iband + 1
+    # used to convert pixels to arc seconds
+    PIXEL_SIZE = 0.27
+
+    # loop through the wavebands
+    for iband, WAVEBAND in enumerate(WAVEBANDS):
+
+        # windowed positions per waveband
         ra = data['ALPHAWIN_J2000_'+WAVEBAND]
         dec = data['DELTAWIN_J2000_'+WAVEBAND]
-
-        # used to convert pixels to arc seconds
-        PIXEL_SIZE=0.27
 
         delta_ra = (ra - radec_centre[0])*3600.0 * \
                    np.cos(np.deg2rad(radec_centre[1]))
@@ -131,11 +137,16 @@ def plot_radec_descat(data=None,
         delta_dec = delta_dec[itest]
 
         # maybe combine this with the assignment above
+
+        # primary key in table
         COADD_OBJECTS_ID = data['COADD_OBJECTS_ID'][itest]
+        # primary key in each tile catalogue
         OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
+
+        # waveband used for the 'master' ra, dec in table
         RADEC_SOURCE_BAND = data['RADEC_SOURCE_BAND'][itest]
 
-        # Detection image
+        # Detection image shape measurements
         A_IMAGE = data['A_IMAGE'][itest]*PIXEL_SIZE
         B_IMAGE = data['B_IMAGE'][itest]*PIXEL_SIZE
         THETA_IMAGE = data['THETA_IMAGE'][itest]
@@ -147,36 +158,35 @@ def plot_radec_descat(data=None,
         YMIN_IMAGE=data['YMIN_IMAGE'][itest]
         YMAX_IMAGE=data['YMAX_IMAGE'][itest]
 
-        # Measurement image
-        ALPHAWIN_J2000 = data['ALPHAWIN_J2000_'+WAVEBAND][itest]
-        DELTAWIN_J2000 = data['DELTAWIN_J2000_'+WAVEBAND][itest]
-        XWIN_IMAGE = data['XWIN_IMAGE_'+WAVEBAND][itest]
-        YWIN_IMAGE = data['YWIN_IMAGE_'+WAVEBAND][itest]
+        # Measurement image positions per waveband
+        ALPHAWIN_J2000 = data['ALPHAWIN_J2000_' + WAVEBAND][itest]
+        DELTAWIN_J2000 = data['DELTAWIN_J2000_' + WAVEBAND][itest]
+        XWIN_IMAGE = data['XWIN_IMAGE_' + WAVEBAND][itest]
+        YWIN_IMAGE = data['YWIN_IMAGE_' + WAVEBAND][itest]
 
-        NEPOCHS = data['NEPOCHS_'+WAVEBAND][itest]
-        MAG_AUTO = data['MAG_AUTO_'+WAVEBAND][itest]
-        FLUX_RADIUS = data['FLUX_RADIUS_'+WAVEBAND][itest]*PIXEL_SIZE
+        #
+        NEPOCHS = data['NEPOCHS_' + WAVEBAND][itest]
+        MAG_AUTO = data['MAG_AUTO_' + WAVEBAND][itest]
+        FLUX_RADIUS = data['FLUX_RADIUS_'+ WAVEBAND][itest] * PIXEL_SIZE
 
-        AWIN_IMAGE = data['AWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
-        BWIN_IMAGE = data['BWIN_IMAGE_'+WAVEBAND][itest]*PIXEL_SIZE
-        THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+WAVEBAND][itest]
+        # shape measurements per waveband
+        AWIN_IMAGE = data['AWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
+        BWIN_IMAGE = data['BWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
+        THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+ WAVEBAND][itest]
 
-        ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_'+WAVEBAND][itest]
-        ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_'+WAVEBAND][itest]
+        ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_' + WAVEBAND][itest]
+        ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_' + WAVEBAND][itest]
 
-        FWHM_WORLD = data['FWHM_WORLD_'+WAVEBAND][itest]
+        FWHM_WORLD = data['FWHM_WORLD_' + WAVEBAND][itest]
 
-        ISOAREA_WORLD = data['ISOAREA_WORLD_'+WAVEBAND][itest]
+        ISOAREA_WORLD = data['ISOAREA_WORLD_' + WAVEBAND][itest]
 
-        FLAGS = data['FLAGS_'+WAVEBAND][itest]
+        FLAGS = data['FLAGS_' + WAVEBAND][itest]
 
-        alpha=0.1
-        i =-1
+        alpha = 0.2
+        for i, id in enumerate(xdata):
 
-        radius = 0.5
-        for id in xdata:
-            i = i + 1
-
+            # plot the sources as circles
             circle = Circle([delta_ra[i], delta_dec[i]], radius,
                 edgecolor='none', facecolor=colors[iband], alpha=alpha)
             plt.gca().add_patch(circle)
@@ -223,6 +233,7 @@ def plot_radec_descat(data=None,
                 "{:7.1f}".format((YMIN_IMAGE[i]+YMAX_IMAGE[i])/2.0),
                 "{:4d}".format(FLAGS[i]))
 
+            # plot as ellipse using the
             ellipse = Ellipse([delta_ra[i], delta_dec[i]],
                 width=width/2.0, height=height/2.0, angle=angle,
                 edgecolor='none', facecolor=colors[iband], alpha=alpha)
@@ -230,6 +241,7 @@ def plot_radec_descat(data=None,
 
         plt.plot(delta_ra, delta_dec, '.', color=colors[iband],
             label=WAVEBAND + ': ' + str(ndata))
+
 
     plt.suptitle('Windowed positions')
 

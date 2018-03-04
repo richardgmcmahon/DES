@@ -92,7 +92,9 @@ def plot_radec_wisecat(data=None,
     ax = plt.gcf().gca()
     for x, y in zip(xdata, ydata):
         print(x, y, radius)
-        circle = plt.Circle((x, y), radius, color='red', alpha=0.05)
+        circle = plt.Circle((x, y), radius,
+                            color='red', alpha=0.05,
+                            edgecolor='red')
         ax.add_artist(circle)
 
     plt.plot(xdata, ydata, '+', color='red')

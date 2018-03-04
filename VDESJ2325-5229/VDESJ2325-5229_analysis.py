@@ -467,28 +467,32 @@ def plot_lightcurve():
 
 
 
-def list_lenses():
+def list_lenses(debug=False):
     """
 
     """
 
     lenses = config.get('sources','lenses')
-    print('lenses: ', lenses, len(lenses))
+    if debug:
+        print(type(lenses), len(lenses))
+        print('lenses: ', lenses)
+
     lenses = lenses.split(',')
     print('lenses: ', lenses, len(lenses))
-    ilens = -1
-    for lens in lenses:
-        ilens = ilens + 1
-        print('lens: ', lens, len(lens))
-        ra = config.get(lens,'ra')
-        dec = config.get(lens,'dec')
-        print('ilens, ra, dec: ', ilens, ra, dec)
-        radec_format = config.get(lens,'radec_format')
-        print('radec format:', radec_format)
 
+    if debug:
+        for ilens, lens in enumerate(lenses):
+            print('lens: ', lens, len(lens))
+            ra = config.get(lens,'ra')
+            dec = config.get(lens,'dec')
+            print('ilens, ra, dec: ', ilens, ra, dec)
+            radec_format = config.get(lens,'radec_format')
+            print('radec format:', radec_format)
 
-    for lens in lenses:
-        print(lens)
+    for ilens, sourcename in enumerate(lenses):
+        print(ilens, sourcename)
+
+    return
 
 
 
@@ -765,6 +769,7 @@ def explore_wise2des(data=None):
 def getargs():
     """
 
+
     """
 
     import argparse
@@ -775,6 +780,9 @@ def getargs():
         description=description, epilog=epilog,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
+
+    parser.add_argument("--configfile", default=None,
+        help="configuration file")
 
     format_default = 'COADD'
     parser.add_argument("--format", default=format_default,
@@ -859,75 +867,64 @@ def getargs():
 
 if __name__ == "__main__":
 
+    import configparser
     import pprint
 
     # TODO
     # plot_compass_arrow(direction='NS', length=2.0)
     # key=raw_input("Enter any key to continue: ")
 
-    import configparser
-
-    config = configparser.RawConfigParser()
-    config.read('VDESJ2325-5229_analysis.cfg')
-
     args = getargs()
+
     debug = args.debug
-    print('debug: ', debug)
-    if debug:
-        pprint.pprint(args)
-        key = raw_input("Enter any key to continue: ")
-
-    cutout = args.cutout
-
-    BAND = args.band
-    print('band: ', BAND)
-
-    format = args.format
-    print('format: ', format)
-
-    plotimages = args.plotimages
-
-    release = args.release
-    print('release: ', release)
-
-    showplots = args.showplots
-    print('showplots: ', showplots)
-
-    source = args.source
-    print('source: ', source)
-
     verbose = args.verbose
-    print('verbose: ', verbose)
+    if debug or verbose:
+        pprint.pprint(args)
+        if debug:
+            key = raw_input("Enter any key to continue: ")
 
-    zoom = args.zoom
-    print('zoom: ', zoom)
-
-    if args.xkcd: plt.xkcd()
-
-    if args.list:
-        list_lenses()
-        sys.exit()
-
-    # debug the list of lenses in the config file
-    list_lenses()
-
-    key = raw_input("Enter any key to continue: ")
+    if args.configfile is not None:
+        configfile = args.configfile
+    cutout = args.cutout
+    band = args.band
+    format = args.format
+    plotimages = args.plotimages
+    release = args.release
+    showplots = args.showplots
 
     # cutout size in arc seconds
     size = args.size
     # size_zoom = args.zoom_size
     # size = args.size_pixels
 
+    source = args.source
+    zoom = args.zoom
+
+    if args.xkcd: plt.xkcd()
+
+
+    # read the configuration file
+    config = configparser.RawConfigParser()
+    config.read('VDESJ2325-5229_analysis.cfg')
+
+    # list the lenses in the config file
+    if args.list:
+        list_lenses(debug=True)
+        sys.exit()
+
+    list_lenses()
+
+
+    print('release:', release)
+    print('SOURCE:', source)
+
+    key = raw_input("Enter any key to continue: ")
+
     xrange = [-size/2.0, size/2.0]
     yrange = [-size/2.0, size/2.0]
 
     # colours to use for grizY plots
     colors=['blue','green','orange','red', 'maroon']
-
-    RELEASE = 'Y1A1'
-
-    print('RELEASE:', RELEASE)
-    print('SOURCE:', source)
 
     datapath_desroot = config.get(source, 'datapath_desroot')
 
@@ -969,7 +966,7 @@ if __name__ == "__main__":
     dec0 = dec
 
     datapath = datapath_desroot + '/' + source + '/'
-    filename_coadd = RELEASE + '_COADD_OBJECTS_' + source + '.fits'
+    filename_coadd = release + '_COADD_OBJECTS_' + source + '.fits'
     print(config.has_option(source,' filename_se'))
     if config.has_option(source, 'filename_se'):
         filename_SingleEpoch = config.get(source, 'filename_se')
@@ -1038,7 +1035,7 @@ if __name__ == "__main__":
 
     print('infile: ', infile)
 
-    inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
+    inpath = '/data/desardata/' + release + '/' + TILENAME + '/'
     print('inpath: ', inpath)
 
     if debug:
@@ -1059,11 +1056,11 @@ if __name__ == "__main__":
         ext = 1
         fzformat = True
 
-        segmapname = TILENAME + '_' + BAND + '_seg.fits'
+        segmapname = TILENAME + '_' + band + '_seg.fits'
         if fzformat: segmapname = segmapname + '.fz'
         segmapfile = inpath + '/segmap/' + segmapname
 
-        plotfile_suffix = BAND + '_' + str(size)
+        plotfile_suffix = band + '_' + str(size)
         plotfile_prefix = source
         suptitle = segmapname
         title = source
@@ -1087,7 +1084,7 @@ if __name__ == "__main__":
 
 
     if format.upper() != 'WISE2DES':
-        catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
+        catfile = inpath + TILENAME + '_' + band + '_cat.fits'
 
 
     # print('Read catfile: ', catfile)
@@ -1098,11 +1095,11 @@ if __name__ == "__main__":
     if plotimages:
         # fz format
         fzformat=True
-        imagename = TILENAME + '_' + BAND + '.fits'
+        imagename = TILENAME + '_' + band + '.fits'
         if fzformat: imagename = imagename + '.fz'
         imagefile = inpath + imagename
 
-        segmapname = TILENAME + '_' + BAND + '_seg.fits'
+        segmapname = TILENAME + '_' + band + '_seg.fits'
         if fzformat: segmapname = segmapname + '.fz'
         segmapfile = inpath + '/segmap/' + segmapname
 
@@ -1119,7 +1116,7 @@ if __name__ == "__main__":
         suptitle = filename
         title = source
 
-        plotfile_suffix = BAND + '_' + str(size)
+        plotfile_suffix = band + '_' + str(size)
         des_get_cutout(infile = imagefile, ext=1,
             title=title, suptitle=suptitle,
             position=(xpix, ypix), format='pixels',
