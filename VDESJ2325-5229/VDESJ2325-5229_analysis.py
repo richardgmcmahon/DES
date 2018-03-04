@@ -756,6 +756,7 @@ def plot_radec_descat(data=None,
                       wavebands=['g', 'r', 'i', 'z', 'y'],
                       coadd=True, multiBand=True,
                       singleEpoch=False,
+                      showplot=False,
                       debug=True):
     """
 
@@ -974,7 +975,8 @@ def plot_radec_descat(data=None,
     #plt.clf()
     print('Saving: ', plotfile)
 
-    plt.show()
+    if showplot:
+        plt.show()
 
     return plt
 
@@ -984,12 +986,19 @@ def plot_radec_wisecat(data=None,
                        xrange = [-2.5, 2.5],
                        yrange = [-2.5, 2.5],
                        overplot=True,
+                       showplot=False,
                        debug=False):
     """
 
 
     """
+
+    from matplotlib.patches import Circle
+
     print('filename:', data.meta['filename'])
+
+    ra0 = radec_centre[0]
+    dec0 = radec_centre[1]
 
     print('Number of rows:', len(data))
     if debug:
@@ -1010,6 +1019,7 @@ def plot_radec_wisecat(data=None,
     delta_ra = (ra - ra0) * 3600.0 * np.cos(np.deg2rad(dec0))
 
     if debug:
+        print('ndata', len(ra))
         print('ra_min:', ra_min)
         print('ra_max:', ra_max)
         print('Delta RA range:',
@@ -1028,14 +1038,19 @@ def plot_radec_wisecat(data=None,
     if debug:
         key=raw_input("Enter any key to continue: ")
 
-
     xdata = delta_ra
     ydata = delta_dec
 
     print(xrange)
     print(yrange)
-    itest = (xdata > xrange[0]) & (xdata < xrange[1]) & \
-            (ydata > yrange[0]) & (ydata < yrange[1])
+
+    # WISE W1 FWHM = 6.0 arcsecs
+    radius = 6.0/2.0
+
+    itest = (xdata > (xrange[0] - radius)) & \
+            (xdata < (xrange[1] + radius)) & \
+            (ydata > (yrange[0] - radius)) & \
+            (ydata < (yrange[1] + radius))
 
     xdata = xdata[itest]
     ydata = ydata[itest]
@@ -1045,13 +1060,19 @@ def plot_radec_wisecat(data=None,
         plt.figure(figsize=(8,8))
         plt.axes().set_aspect('equal')
 
-    plt.plot(xdata, ydata, 'o', color='red',
-             label='WISE: '+str(ndata))
+    patches = []
+    ax = plt.gcf().gca()
+    for x, y in zip(xdata, ydata):
+        print(x, y, radius)
+        circle = plt.Circle((x, y), radius, color='red', alpha=0.05)
+        ax.add_artist(circle)
 
+    plt.plot(xdata, ydata, '+', color='red')
     plt.xlim(xrange)
     plt.ylim(yrange)
 
-    plt.show()
+    if showplot:
+        plt.show()
 
     return plt
 
@@ -1116,12 +1137,12 @@ def getargs():
     # single epoch pixel size 0.267 arcsec/pixel
     parser.add_argument("--size",
                         type=int,
-                        default=10,
+                        default=8,
                         help="Size in arcsecs")
 
     parser.add_argument("--zoom_size",
                         type=int,
-                        default=5,
+                        default=4,
                         help="Zoom in size in arcsecs")
 
     parser.add_argument("--size_pixels",
@@ -1182,7 +1203,6 @@ if __name__ == "__main__":
 
     BAND = args.band
     print('band: ', BAND)
-
 
     format = args.format
     print('format: ', format)
@@ -1265,10 +1285,8 @@ if __name__ == "__main__":
 
     ra = float(ra)
     dec = float(dec)
-
     ra_source = ra
     dec_source = dec
-
     ra0 = ra
     dec0 = dec
 
@@ -1345,7 +1363,6 @@ if __name__ == "__main__":
     inpath = '/data/desardata/' + RELEASE + '/' + TILENAME + '/'
     print('inpath: ', inpath)
 
-
     if debug:
         print('filename_wise:', filename_wise)
         key=raw_input("Enter any key to continue: ")
@@ -1357,8 +1374,6 @@ if __name__ == "__main__":
         wisedata.info('stats')
         if debug:
             key=raw_input("Enter any key to continue: ")
-
-
 
     print('args.edgedetection:', args.edgedetection)
     if args.edgedetection:
@@ -1396,11 +1411,11 @@ if __name__ == "__main__":
     if format.upper() != 'WISE2DES':
         catfile = inpath + TILENAME + '_' + BAND + '_cat.fits'
 
-    print('Read catfile: ', catfile)
-    catdata = Table.read(catfile)
-    print(catdata.colnames)
-    catdata.info('stats')
 
+    # print('Read catfile: ', catfile)
+    # catdata = Table.read(catfile)
+    # print(catdata.colnames)
+    # catdata.info('stats')
 
     if plotimages:
         # fz format
@@ -1706,14 +1721,20 @@ if __name__ == "__main__":
                                 radec_centre=(ra0, dec0),
                                 xrange=xrange,
                                 yrange=yrange,
-                                coadd=True, multiBand=True,
-                                singleEpoch=False)
+                                coadd=True,
+                                multiBand=True,
+                                singleEpoch=False,
+                                showplot=False,
+                                debug=debug)
 
         if filename_wise is not None:
             plt = plot_radec_wisecat(data=wisedata,
                                      radec_centre=(ra0, dec0),
                                      xrange=xrange,
-                                     yrange=yrange)
+                                     yrange=yrange,
+                                     showplot=False,
+                                     debug=debug)
+        plt.show()
 
     if format.upper() == 'WISE2DES':
         ra = data['RA_CALC_I']
