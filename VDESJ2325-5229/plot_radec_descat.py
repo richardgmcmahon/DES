@@ -173,7 +173,7 @@ def plot_radec_descat(data=None,
         alpha=0.1
         i =-1
 
-        radius = 0.7
+        radius = 0.5
         for id in xdata:
             i = i + 1
 
