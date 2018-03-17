@@ -6,7 +6,7 @@ from librgm.plotid import plotid
 
 
 def plot_radec_wisecat(data=None,
-                       source=None,
+                       source=None, radius=3.0,
                        radec_centre=None,
                        xrange = [-2.5, 2.5],
                        yrange = [-2.5, 2.5],
@@ -15,6 +15,9 @@ def plot_radec_wisecat(data=None,
                        showplot=False,
                        debug=False):
     """
+
+    # WISE W1 FWHM = 6.0 arcsecs
+    radius = 6.0/2.0 = 3.0
 
 
     """
@@ -71,8 +74,6 @@ def plot_radec_wisecat(data=None,
     print(xrange)
     print(yrange)
 
-    # WISE W1 FWHM = 6.0 arcsecs
-    radius = 6.0/2.0
 
     # include the psf radius so that sources that near edge are plotted
     itest = (xdata > (xrange[0] - radius)) & \
@@ -93,9 +94,18 @@ def plot_radec_wisecat(data=None,
     for x, y in zip(xdata, ydata):
         print(x, y, radius)
         circle = plt.Circle((x, y), radius,
-                            color='red', alpha=0.05,
-                            edgecolor='red')
+                            color='red', alpha=0.1,
+                            edgecolor='red',
+                            linestyle='dashed', linewidth=1.0)
         ax.add_artist(circle)
+
+        # draw line around edge with alpha = 1.0
+        circle = plt.Circle((x, y), radius, fill=False,
+                            color='red', alpha=1.0,
+                            edgecolor='red',
+                            linestyle='dashed', linewidth=1.0)
+        ax.add_artist(circle)
+
 
     plt.plot(xdata, ydata, '+', color='red')
     plt.xlim(xrange)

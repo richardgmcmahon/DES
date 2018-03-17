@@ -6,7 +6,7 @@ from librgm.plotid import plotid
 
 def plot_radec_descat(data=None,
                       source=None,
-                      radius = 0.45,
+                      radius = 0.45, alpha=0.2,
                       radec_centre=None,
                       xrange = [-2.5, 2.5],
                       yrange = [-2.5, 2.5],
@@ -183,10 +183,10 @@ def plot_radec_descat(data=None,
 
         FLAGS = data['FLAGS_' + WAVEBAND][itest]
 
-        alpha = 0.2
-        for i, id in enumerate(xdata):
+        # loop through the sources
+        for i, ra, in enumerate(xdata):
 
-            # plot the sources as circles
+            # plot the sources as colored filled circles
             circle = Circle([delta_ra[i], delta_dec[i]], radius,
                 edgecolor='none', facecolor=colors[iband], alpha=alpha)
             plt.gca().add_patch(circle)
@@ -227,10 +227,10 @@ def plot_radec_descat(data=None,
                 "{:7.1f}".format(XMAX_IMAGE[i]),
                 "{:7.1f}".format(YMIN_IMAGE[i]),
                 "{:7.1f}".format(YMAX_IMAGE[i]),
-                "{:5.1f}".format(XMAX_IMAGE[i]-XMIN_IMAGE[i]),
-                "{:5.1f}".format(YMAX_IMAGE[i]-YMIN_IMAGE[i]),
-                "{:7.1f}".format((XMIN_IMAGE[i]+XMAX_IMAGE[i])/2.0),
-                "{:7.1f}".format((YMIN_IMAGE[i]+YMAX_IMAGE[i])/2.0),
+                "{:5.1f}".format(XMAX_IMAGE[i] - XMIN_IMAGE[i]),
+                "{:5.1f}".format(YMAX_IMAGE[i] - YMIN_IMAGE[i]),
+                "{:7.1f}".format((XMIN_IMAGE[i] + XMAX_IMAGE[i]) / 2.0),
+                "{:7.1f}".format((YMIN_IMAGE[i] + YMAX_IMAGE[i]) / 2.0),
                 "{:4d}".format(FLAGS[i]))
 
             # plot as ellipse using the

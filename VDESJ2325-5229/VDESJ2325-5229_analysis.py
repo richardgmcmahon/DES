@@ -795,6 +795,15 @@ def getargs():
     parser.set_defaults(source='VDESJ2325-5229')
     parser.add_argument("--source",
                         help="source  as a string")
+
+    parser.set_defaults(summaryfile=None)
+    parser.add_argument("--summaryfile",
+                        help="summary file with sample")
+
+    parser.set_defaults(mastercat=None)
+    parser.add_argument("--mastercat",
+                        help="Analysis of mastercat")
+
     parser.set_defaults(band='i')
     parser.add_argument("--band",
                         help="waveband [g, r, i, z, Y]")
@@ -1392,7 +1401,7 @@ if __name__ == "__main__":
 
     if format == 'COADD':
 
-        plt = plot_radec_descat(data=data,
+        plt = plot_radec_descat(data=data, radius=0.45,
                                 source=source,
                                 radec_centre=(ra0, dec0),
                                 xrange=xrange,
@@ -1404,7 +1413,7 @@ if __name__ == "__main__":
                                 debug=debug)
 
         if filename_wise is not None:
-            plt = plot_radec_wisecat(data=wisedata,
+            plt = plot_radec_wisecat(data=wisedata, radius=3.0,
                                      source=source,
                                      radec_centre=(ra0, dec0),
                                      xrange=xrange,
