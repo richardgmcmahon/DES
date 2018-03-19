@@ -70,6 +70,7 @@ from librgm.plotid import plotid
 
 from plot_radec_descat import *
 from plot_radec_wisecat import *
+from plot_radec_gaiacat import *
 
 
 def plot_compass_arrow(AstWCS=None, direction='NS',
@@ -812,6 +813,10 @@ def getargs():
     parser.add_argument("--wise", action='store_true',
         help="wise overplot option")
 
+    parser.set_defaults(gaia=False)
+    parser.add_argument("--gaia", action='store_true',
+        help="gaia overplot option")
+
     parser.set_defaults(cutout=False)
     parser.add_argument("--cutout", action='store_true',
         help="cutout option")
@@ -873,7 +878,6 @@ def getargs():
     return args
 
 
-
 if __name__ == "__main__":
 
     import configparser
@@ -933,7 +937,7 @@ if __name__ == "__main__":
     yrange = [-size/2.0, size/2.0]
 
     # colours to use for grizY plots
-    colors=['blue','green','orange','red', 'maroon']
+    colors = ['blue','green','orange','red', 'maroon']
 
     datapath_desroot = config.get(source, 'datapath_desroot')
 
@@ -943,6 +947,16 @@ if __name__ == "__main__":
     filename_wise = None
     if args.wise:
         filename_wise = config.get(source, 'filename_wise')
+
+    filename_gaiacat = None
+    if args.gaia:
+        path_gaiacat = config.get(source, 'path_gaiacat')
+        filename_gaiacat = config.get(source, 'filename_gaiacat')
+        infile_gaiacat = path_gaiacat + '/' + filename_gaiacat
+        print('Reading gaiacat file:', infile_gaiacat)
+        gaiacat = Table.read(infile_gaiacat)
+        gaiacat.info('stats')
+
 
     datapath_cats = config.get(source, 'datapath_cats')
     print('datapath_cats:', datapath_cats)
@@ -1421,6 +1435,20 @@ if __name__ == "__main__":
                                      showplot=False,
                                      plt=plt,
                                      debug=debug)
+
+
+        if filename_gaiacat is not None:
+            colnames_radec = ['gaia_ra', 'gaia_dec']
+            plt = plot_radec_gaiacat(data=gaiacat, radius=0.1,
+                                     source=source,
+                                     colnames_radec=colnames_radec,
+                                     radec_centre=(ra0, dec0),
+                                     xrange=xrange,
+                                     yrange=yrange,
+                                     showplot=False,
+                                     plt=plt,
+                                     debug=debug)
+
         plt.show()
 
     if format.upper() == 'WISE2DES':

@@ -4,7 +4,57 @@ sys.path.append('/home/rgm/soft/python/lib/')
 from librgm.plotid import plotid
 
 
-def plot_radec_descat(data=None,
+def des_parameter_analysis(data=None, index=None):
+    """
+    do some analysis of the shape parameters
+
+
+    """
+    itest = index
+        # primary key in table
+    COADD_OBJECTS_ID = data['COADD_OBJECTS_ID'][itest]
+
+    # waveband used for the 'master' ra, dec in table
+    RADEC_SOURCE_BAND = data['RADEC_SOURCE_BAND'][itest]
+
+    # Detection image shape measurements
+    A_IMAGE = data['A_IMAGE'][itest]*PIXEL_SIZE
+    B_IMAGE = data['B_IMAGE'][itest]*PIXEL_SIZE
+    THETA_IMAGE = data['THETA_IMAGE'][itest]
+
+    KRON_RADIUS = data['KRON_RADIUS'][itest]*PIXEL_SIZE
+
+    XMIN_IMAGE=data['XMIN_IMAGE'][itest]
+    XMAX_IMAGE=data['XMAX_IMAGE'][itest]
+    YMIN_IMAGE=data['YMIN_IMAGE'][itest]
+    YMAX_IMAGE=data['YMAX_IMAGE'][itest]
+
+    XWIN_IMAGE = data['XWIN_IMAGE_' + WAVEBAND][itest]
+    YWIN_IMAGE = data['YWIN_IMAGE_' + WAVEBAND][itest]
+
+    #
+    NEPOCHS = data['NEPOCHS_' + WAVEBAND][itest]
+    MAG_AUTO = data['MAG_AUTO_' + WAVEBAND][itest]
+    FLUX_RADIUS = data['FLUX_RADIUS_'+ WAVEBAND][itest] * PIXEL_SIZE
+
+    # shape measurements per waveband
+    AWIN_IMAGE = data['AWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
+    BWIN_IMAGE = data['BWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
+    THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+ WAVEBAND][itest]
+
+    ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_' + WAVEBAND][itest]
+    ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_' + WAVEBAND][itest]
+
+    FWHM_WORLD = data['FWHM_WORLD_' + WAVEBAND][itest]
+
+    ISOAREA_WORLD = data['ISOAREA_WORLD_' + WAVEBAND][itest]
+
+    FLAGS = data['FLAGS_' + WAVEBAND][itest]
+
+    return
+
+
+def plot_radec_descat(data=None, release='Y1A1',
                       source=None,
                       radius = 0.45, alpha=0.2,
                       radec_centre=None,
@@ -29,16 +79,18 @@ def plot_radec_descat(data=None,
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle, Ellipse
 
-    colors=['blue','green','orange','red', 'maroon']
+    colors = ['blue','green','orange','red', 'maroon']
 
-    print('filename:', data.meta['filename'])
+    infile = None
+    if 'filename' in data.meta:
+        infile = data.meta['filename']
 
     print('Number of rows:', len(data))
     if debug:
         data.info()
         data.info('stats')
-        print('zoom:', zoom)
-        print('filename:', data.meta['filename'])
+        print('data.meta:', data.meta)
+        print('filename:', infile)
         print('ra_centre', radec_centre[0])
         print('dec_centre', radec_centre[1])
         print('xrange:', xrange)
@@ -49,6 +101,21 @@ def plot_radec_descat(data=None,
 
     ra = data['RA']
     dec = data['DEC']
+
+    # OBJECT_NUMBER
+    # primary key in each tile catalogue
+    # OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
+    index_column = -1
+    try:
+        index_column = data.index_column('OBJECT_NUMBER')
+    except:
+        pass
+    if debug:
+        print('index_column:', index_column)
+    if index_column > -1:
+        OBJECT_NUMBER = data['OBJECT_NUMBER']
+    if index_column < 0:
+        OBJECT_NUMBER = np.full(len(data), -1)
 
     COADD_OBJECTS_ID = data['COADD_OBJECTS_ID']
 
@@ -77,7 +144,6 @@ def plot_radec_descat(data=None,
     if debug:
         key=raw_input("Enter any key to continue: ")
 
-
     xdata = delta_ra
     ydata = delta_dec
 
@@ -97,7 +163,7 @@ def plot_radec_descat(data=None,
     plt.xlim(xrange)
     plt.ylim(yrange)
 
-    infile = data.meta['filename']
+
     plt.title(infile, fontsize='medium')
     plt.grid(True)
 
@@ -112,6 +178,8 @@ def plot_radec_descat(data=None,
     PIXEL_SIZE = 0.27
 
     # loop through the wavebands
+    if debug:
+        data.info('stats')
     for iband, WAVEBAND in enumerate(WAVEBANDS):
 
         # windowed positions per waveband
@@ -136,52 +204,13 @@ def plot_radec_descat(data=None,
         delta_ra = delta_ra[itest]
         delta_dec = delta_dec[itest]
 
-        # maybe combine this with the assignment above
-
-        # primary key in table
-        COADD_OBJECTS_ID = data['COADD_OBJECTS_ID'][itest]
-        # primary key in each tile catalogue
-        OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
-
-        # waveband used for the 'master' ra, dec in table
-        RADEC_SOURCE_BAND = data['RADEC_SOURCE_BAND'][itest]
-
-        # Detection image shape measurements
-        A_IMAGE = data['A_IMAGE'][itest]*PIXEL_SIZE
-        B_IMAGE = data['B_IMAGE'][itest]*PIXEL_SIZE
-        THETA_IMAGE = data['THETA_IMAGE'][itest]
-
-        KRON_RADIUS = data['KRON_RADIUS'][itest]*PIXEL_SIZE
-
-        XMIN_IMAGE=data['XMIN_IMAGE'][itest]
-        XMAX_IMAGE=data['XMAX_IMAGE'][itest]
-        YMIN_IMAGE=data['YMIN_IMAGE'][itest]
-        YMAX_IMAGE=data['YMAX_IMAGE'][itest]
+        do_parameter_analysis = False
+        if do_parameter_analysis:
+            des_parameter_analysis(data=data, index=itest)
 
         # Measurement image positions per waveband
         ALPHAWIN_J2000 = data['ALPHAWIN_J2000_' + WAVEBAND][itest]
         DELTAWIN_J2000 = data['DELTAWIN_J2000_' + WAVEBAND][itest]
-        XWIN_IMAGE = data['XWIN_IMAGE_' + WAVEBAND][itest]
-        YWIN_IMAGE = data['YWIN_IMAGE_' + WAVEBAND][itest]
-
-        #
-        NEPOCHS = data['NEPOCHS_' + WAVEBAND][itest]
-        MAG_AUTO = data['MAG_AUTO_' + WAVEBAND][itest]
-        FLUX_RADIUS = data['FLUX_RADIUS_'+ WAVEBAND][itest] * PIXEL_SIZE
-
-        # shape measurements per waveband
-        AWIN_IMAGE = data['AWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
-        BWIN_IMAGE = data['BWIN_IMAGE_' + WAVEBAND][itest] * PIXEL_SIZE
-        THETAWIN_IMAGE = data['THETAWIN_IMAGE_'+ WAVEBAND][itest]
-
-        ELLIP1MODEL_WORLD = data['ELLIP1MODEL_WORLD_' + WAVEBAND][itest]
-        ELLIP2MODEL_WORLD = data['ELLIP2MODEL_WORLD_' + WAVEBAND][itest]
-
-        FWHM_WORLD = data['FWHM_WORLD_' + WAVEBAND][itest]
-
-        ISOAREA_WORLD = data['ISOAREA_WORLD_' + WAVEBAND][itest]
-
-        FLAGS = data['FLAGS_' + WAVEBAND][itest]
 
         # loop through the sources
         for i, ra, in enumerate(xdata):
@@ -191,59 +220,62 @@ def plot_radec_descat(data=None,
                 edgecolor='none', facecolor=colors[iband], alpha=alpha)
             plt.gca().add_patch(circle)
 
-            width = AWIN_IMAGE[i]
-            height = BWIN_IMAGE[i]
-            angle = THETAWIN_IMAGE[i] + 90.0
             coadd_objects_id = COADD_OBJECTS_ID[i]
 
-            print(i, coadd_objects_id,
-                OBJECT_NUMBER[i],
-                WAVEBAND,
-                RADEC_SOURCE_BAND[i],
-                "{:4d}".format(NEPOCHS[i]),
-                "{:8.2f}".format(MAG_AUTO[i]),
-                "{:6.2f}".format(delta_ra[i]),
-                "{:6.2f}".format(delta_dec[i]),
-                "{:6.2f}".format(FLUX_RADIUS[i]),
-                "{:6.2f}".format(KRON_RADIUS[i]),
-                "{:6.2f}".format(width),
-                "{:6.2f}".format(height),
-                "{:7.1f}".format(angle),
-                "{:6.3f}".format(width/height))
+            if do_parameter_analysis:
+                width = AWIN_IMAGE[i]
+                height = BWIN_IMAGE[i]
+                angle = THETAWIN_IMAGE[i] + 90.0
 
-            print(i, coadd_objects_id,
+                print(i, coadd_objects_id,
                 OBJECT_NUMBER[i],
-                WAVEBAND,
-                "{:8.2f}".format(A_IMAGE[i]),
-                "{:8.2f}".format(B_IMAGE[i]),
-                "{:7.1f}".format(THETA_IMAGE[i]))
+                    WAVEBAND,
+                    RADEC_SOURCE_BAND[i],
+                    "{:4d}".format(NEPOCHS[i]),
+                    "{:8.2f}".format(MAG_AUTO[i]),
+                    "{:6.2f}".format(delta_ra[i]),
+                    "{:6.2f}".format(delta_dec[i]),
+                    "{:6.2f}".format(FLUX_RADIUS[i]),
+                    "{:6.2f}".format(KRON_RADIUS[i]),
+                    "{:6.2f}".format(width),
+                    "{:6.2f}".format(height),
+                    "{:7.1f}".format(angle),
+                    "{:6.3f}".format(width/height))
 
-            print(i, coadd_objects_id,
-                OBJECT_NUMBER[i],
-                WAVEBAND,
-                "{:7.1f}".format(XWIN_IMAGE[i]),
-                "{:7.1f}".format(YWIN_IMAGE[i]),
-                "{:7.1f}".format(XMIN_IMAGE[i]),
-                "{:7.1f}".format(XMAX_IMAGE[i]),
-                "{:7.1f}".format(YMIN_IMAGE[i]),
-                "{:7.1f}".format(YMAX_IMAGE[i]),
-                "{:5.1f}".format(XMAX_IMAGE[i] - XMIN_IMAGE[i]),
-                "{:5.1f}".format(YMAX_IMAGE[i] - YMIN_IMAGE[i]),
-                "{:7.1f}".format((XMIN_IMAGE[i] + XMAX_IMAGE[i]) / 2.0),
-                "{:7.1f}".format((YMIN_IMAGE[i] + YMAX_IMAGE[i]) / 2.0),
-                "{:4d}".format(FLAGS[i]))
+                print(i, coadd_objects_id,
+                    OBJECT_NUMBER[i],
+                    WAVEBAND,
+                    "{:8.2f}".format(A_IMAGE[i]),
+                    "{:8.2f}".format(B_IMAGE[i]),
+                    "{:7.1f}".format(THETA_IMAGE[i]))
 
-            # plot as ellipse using the
-            ellipse = Ellipse([delta_ra[i], delta_dec[i]],
-                width=width/2.0, height=height/2.0, angle=angle,
-                edgecolor='none', facecolor=colors[iband], alpha=alpha)
-            plt.gca().add_patch(ellipse)
+                print(i, coadd_objects_id,
+                    OBJECT_NUMBER[i],
+                    WAVEBAND,
+                    "{:7.1f}".format(XWIN_IMAGE[i]),
+                    "{:7.1f}".format(YWIN_IMAGE[i]),
+                    "{:7.1f}".format(XMIN_IMAGE[i]),
+                    "{:7.1f}".format(XMAX_IMAGE[i]),
+                    "{:7.1f}".format(YMIN_IMAGE[i]),
+                    "{:7.1f}".format(YMAX_IMAGE[i]),
+                    "{:5.1f}".format(XMAX_IMAGE[i] - XMIN_IMAGE[i]),
+                    "{:5.1f}".format(YMAX_IMAGE[i] - YMIN_IMAGE[i]),
+                    "{:7.1f}".format((XMIN_IMAGE[i] + XMAX_IMAGE[i]) / 2.0),
+                    "{:7.1f}".format((YMIN_IMAGE[i] + YMAX_IMAGE[i]) / 2.0),
+                    "{:4d}".format(FLAGS[i]))
+
+                # plot as ellipse using the
+                ellipse = Ellipse([delta_ra[i], delta_dec[i]],
+                    width=width/2.0, height=height/2.0, angle=angle,
+                    edgecolor='none', facecolor=colors[iband], alpha=alpha)
+                plt.gca().add_patch(ellipse)
+
 
         plt.plot(delta_ra, delta_dec, '.', color=colors[iband],
             label=WAVEBAND + ': ' + str(ndata))
 
 
-    plt.suptitle('Windowed positions')
+    plt.suptitle('Windowed positions: ' + source)
 
     plt.xlabel('Delta RA (arc seconds)')
     plt.ylabel('Delta Dec (arc seconds)')

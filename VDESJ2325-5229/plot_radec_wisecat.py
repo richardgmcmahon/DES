@@ -8,6 +8,7 @@ from librgm.plotid import plotid
 def plot_radec_wisecat(data=None,
                        source=None, radius=3.0,
                        radec_centre=None,
+                       colnames_radec=['RAJ2000', 'DEJ2000'],
                        xrange = [-2.5, 2.5],
                        yrange = [-2.5, 2.5],
                        overplot=True,
@@ -25,7 +26,10 @@ def plot_radec_wisecat(data=None,
     import numpy as np
     from matplotlib.patches import Circle
 
-    print('filename:', data.meta['filename'])
+    infile = None
+    if 'filename' in data.meta:
+        print('filename:', data.meta['filename'])
+        infile = data.meta['filename']
 
     ra0 = radec_centre[0]
     dec0 = radec_centre[1]
@@ -34,15 +38,28 @@ def plot_radec_wisecat(data=None,
     if debug:
         data.info()
         data.info('stats')
-        print('zoom:', zoom)
-        print('filename:', data.meta['filename'])
+        print('filename:', infile)
         print('ra0', ra0)
         print('dec0', dec0)
         print('xrange:', xrange)
         print('yrange:', yrange)
 
-    ra = data['RAJ2000']
-    dec = data['DEJ2000']
+    index_column = -1
+    try:
+        index_column = data.index_column(colnames_radec[0])
+    except:
+        pass
+    if index_column > -1:
+        ra = data[colnames_radec[0]]
+
+    index_column = -1
+    try:
+        index_column = data.index_column(colnames_radec[1])
+    except:
+        pass
+    if index_column > -1:
+        dec = data[colnames_radec[1]]
+
 
     ra_min = np.min(ra)
     ra_max = np.max(ra)
