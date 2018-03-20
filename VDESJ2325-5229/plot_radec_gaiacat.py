@@ -128,7 +128,6 @@ def plot_radec_gaiacat(data=None,
     #plt.clf()
     print('Saving: ', plotfile)
 
-
     if showplot:
         plt.show()
 

@@ -57,6 +57,7 @@ def des_parameter_analysis(data=None, index=None):
 def plot_radec_descat(data=None, release='Y1A1',
                       source=None,
                       radius = 0.45, alpha=0.2,
+                      colnames_radec=None,
                       radec_centre=None,
                       xrange = [-2.5, 2.5],
                       yrange = [-2.5, 2.5],
@@ -79,7 +80,7 @@ def plot_radec_descat(data=None, release='Y1A1',
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle, Ellipse
 
-    colors = ['blue','green','orange','red', 'maroon']
+    colors = ['blue', 'green', 'orange', 'red', 'maroon']
 
     infile = None
     if 'filename' in data.meta:

@@ -48,6 +48,7 @@ from librgm.xmatch import xmatch_selfcheck
 
 
 from plot_radec_descat import *
+from plot_radec_vhscat import *
 from plot_radec_wisecat import *
 from plot_radec_gaiacat import *
 
@@ -98,6 +99,14 @@ def getargs():
     parser.set_defaults(wise=False)
     parser.add_argument("--wise", action='store_true',
         help="wise overplot option")
+
+    parser.add_argument("--invert_xaxis", action='store_true',
+                        default=False,
+                        help="invert x-axis")
+
+    parser.add_argument("--invert_yaxis", action='store_true',
+                        default=False,
+                        help="invert y-axis")
 
     parser.set_defaults(cutout=False)
     parser.add_argument("--cutout", action='store_true',
@@ -255,7 +264,7 @@ if __name__ == "__main__":
     descat.info('stats')
 
     wisedata = descat
-    vhsdata = None
+    vhsdata = descat
 
     path_gaiacat = config.get('MASTERCAT', 'path_gaiacat')
     filename_gaiacat = config.get('MASTERCAT', 'filename_gaiacat')
@@ -270,6 +279,9 @@ if __name__ == "__main__":
     colnames_radec1 = ['RA', 'DEC']
     colnames_radec2 = ['RA', 'Dec']
 
+    # I do not use the xmatch at the moment since I just trawl through the
+    # mastercat sources and descat sources outside the regions get ignored
+    # at the plot stage
     if debug:
         help(xmatch_cat)
     print("Elapsed time %.3f seconds" % (time.time() - t0))
@@ -289,8 +301,13 @@ if __name__ == "__main__":
     numpoints = len(dr)
     print(len(dr), dr_median, dr_mad_std)
 
+    itest = np.unique(idxmatch)
+    print('Unique idxmatch:', len(itest), len(idxmatch))
+
     itest = np.unique(table1['row_id'])
-    print(len(itest))
+    print('Unique row_id:', len(itest))
+
+
     for icount, id in enumerate(itest):
         print(icount + 1, id,
               mastercat['RA'][id], mastercat['Dec'][id])
@@ -303,6 +320,14 @@ if __name__ == "__main__":
                     unit=u.deg).to_string(unit=u.degree,
                     precision=precision, sep=' ',
                     pad=True, alwayssign=True))
+
+        imatch = (idxmatch == id)
+        print(icount + 1, id, len(imatch), len(descat[imatch]))
+        print(np.average(descat['RA'][imatch]))
+        print(np.average(descat['DEC'][imatch]))
+
+    if debug:
+        key = raw_input("Enter any key to continue: ")
 
 
     showplot = True
@@ -321,8 +346,16 @@ if __name__ == "__main__":
                            precision=1, sep='',
                            pad=True, alwayssign=True)
 
-        # keep plt handle for overlays
+        imatch = (idxmatch == id)
+        print(icount + 1, id, len(imatch), len(descat[imatch]))
+
+        RA_average = np.average(descat['RA'][imatch])
+        DEC_average = np.average(descat['DEC'][imatch])
+
         radec_centre = (mastercat['RA'][id], mastercat['Dec'][id])
+        radec_centre = (RA_average, DEC_average)
+
+        # Note we keep plt handle for overlays; this could cause problems
         plt = plot_radec_descat(data=data,
                                 radius=0.45,
                                 source=sourceName,
@@ -334,6 +367,9 @@ if __name__ == "__main__":
                                 singleEpoch=False,
                                 showplot=False,
                                 debug=debug)
+
+        if args.invert_xaxis:
+            plt.gca().invert_xaxis()
 
         if wisedata is not None:
             colnames_radec = ['RA_WISE', 'DEC_WISE']
@@ -347,10 +383,9 @@ if __name__ == "__main__":
                                      plt=plt,
                                      debug=debug)
 
-
         if vhsdata is not None:
             colnames_radec = ['RA_VHS', 'DEC_VHS']
-            plt = plot_radec_descat(data=vhsdata, radius=0.45,
+            plt = plot_radec_vhscat(data=vhsdata, radius=0.45,
                                     source=sourceName,
                                     radec_centre=radec_centre,
                                     colnames_radec=colnames_radec,
@@ -371,5 +406,14 @@ if __name__ == "__main__":
                                     showplot=False,
                                     plt=plt,
                                     debug=debug)
+
+
+        if args.invert_xaxis:
+            plt.gca().invert_xaxis()
+
+        plotfile = source + '_COADD_radec.png'
+        plt.savefig(plotfile)
+        print('Saving: ', plotfile)
+
 
         plt.show()
