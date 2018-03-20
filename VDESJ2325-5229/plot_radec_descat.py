@@ -57,11 +57,12 @@ def des_parameter_analysis(data=None, index=None):
 def plot_radec_descat(data=None, release='Y1A1',
                       source=None,
                       radius = 0.45, alpha=0.2,
-                      colnames_radec=None,
+                      colnames_radec=['RA', 'DEC'],
                       radec_centre=None,
-                      xrange = [-2.5, 2.5],
-                      yrange = [-2.5, 2.5],
+                      xrange=[-2.5, 2.5],
+                      yrange=[-2.5, 2.5],
                       wavebands=['g', 'r', 'i', 'z', 'y'],
+                      colors=['blue', 'green', 'orange', 'red', 'maroon'],
                       coadd=True,
                       multiBand=True,
                       singleEpoch=False,
@@ -80,7 +81,6 @@ def plot_radec_descat(data=None, release='Y1A1',
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle, Ellipse
 
-    colors = ['blue', 'green', 'orange', 'red', 'maroon']
 
     infile = None
     if 'filename' in data.meta:
@@ -100,9 +100,10 @@ def plot_radec_descat(data=None, release='Y1A1',
     itest = np.unique(data['TILENAME'])
     print('Tiles:', itest)
 
-    ra = data['RA']
-    dec = data['DEC']
+    ra = data[colnames_radec[0]]
+    dec = data[colnames_radec[1]]
 
+    # this will populate OBJECT_NUMBER and noit crash
     # OBJECT_NUMBER
     # primary key in each tile catalogue
     # OBJECT_NUMBER = data['OBJECT_NUMBER'][itest]
@@ -122,7 +123,7 @@ def plot_radec_descat(data=None, release='Y1A1',
 
     ra_min = np.min(ra)
     ra_max = np.max(ra)
-    # convert to arc seconds
+    # convert to arc seconds and deal with cosine dec
     delta_ra = (ra - radec_centre[0]) * 3600.0 * \
                np.cos(np.deg2rad(radec_centre[1]))
 
@@ -217,8 +218,10 @@ def plot_radec_descat(data=None, release='Y1A1',
         for i, ra, in enumerate(xdata):
 
             # plot the sources as colored filled circles
-            circle = Circle([delta_ra[i], delta_dec[i]], radius,
-                edgecolor='none', facecolor=colors[iband], alpha=alpha)
+            circle = Circle([delta_ra[i], delta_dec[i]],
+                            radius,
+                            edgecolor='none', facecolor=colors[iband],
+                            alpha=alpha)
             plt.gca().add_patch(circle)
 
             coadd_objects_id = COADD_OBJECTS_ID[i]
@@ -268,7 +271,8 @@ def plot_radec_descat(data=None, release='Y1A1',
                 # plot as ellipse using the
                 ellipse = Ellipse([delta_ra[i], delta_dec[i]],
                     width=width/2.0, height=height/2.0, angle=angle,
-                    edgecolor='none', facecolor=colors[iband], alpha=alpha)
+                    edgecolor='none', facecolor=colors[iband],
+                    alpha=alpha)
                 plt.gca().add_patch(ellipse)
 
 

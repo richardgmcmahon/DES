@@ -7,6 +7,7 @@ from librgm.plotid import plotid
 
 def plot_radec_vhscat(data=None,
                        source=None, radius=3.0,
+                       alpha=0.2,
                        radec_centre=None,
                        colnames_radec=['RAJ2000', 'DEJ2000'],
                        xrange = [-2.5, 2.5],
@@ -108,7 +109,7 @@ def plot_radec_vhscat(data=None,
     for x, y in zip(xdata, ydata):
         print(x, y, radius)
         circle = plt.Circle((x, y), radius,
-                            color='orange', alpha=0.2,
+                            color='orange', alpha=alpha,
                             edgecolor='orange',
                             linestyle='dashed', linewidth=1.0)
         ax.add_artist(circle)

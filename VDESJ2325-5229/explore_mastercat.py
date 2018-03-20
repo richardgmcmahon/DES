@@ -358,6 +358,7 @@ if __name__ == "__main__":
         # Note we keep plt handle for overlays; this could cause problems
         plt = plot_radec_descat(data=data,
                                 radius=0.45,
+                                alpha=0.1,
                                 source=sourceName,
                                 radec_centre=radec_centre,
                                 xrange=xrange,
@@ -383,7 +384,9 @@ if __name__ == "__main__":
 
         if vhsdata is not None:
             colnames_radec = ['RA_VHS', 'DEC_VHS']
-            plt = plot_radec_vhscat(data=vhsdata, radius=0.45,
+            plt = plot_radec_vhscat(data=vhsdata,
+                                    radius=0.45,
+                                    alpha=0.3,
                                     source=sourceName,
                                     radec_centre=radec_centre,
                                     colnames_radec=colnames_radec,
