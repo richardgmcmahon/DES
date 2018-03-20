@@ -118,10 +118,11 @@ def plot_radec_gaiacat(data=None,
                             linestyle='solid', linewidth=1.0)
         ax.add_artist(circle)
 
-
-    plt.plot(xdata, ydata, '+', color='blue')
+    ndata = len(xdata)
+    plt.plot(xdata, ydata, '+', color='blue', label='Gaia: ' + str(ndata))
     plt.xlim(xrange)
     plt.ylim(yrange)
+    plt.legend(fontsize='small')
 
     plotfile = source + '_COADD_radec.png'
     plt.savefig(plotfile)

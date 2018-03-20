@@ -368,12 +368,10 @@ if __name__ == "__main__":
                                 showplot=False,
                                 debug=debug)
 
-        if args.invert_xaxis:
-            plt.gca().invert_xaxis()
-
         if wisedata is not None:
             colnames_radec = ['RA_WISE', 'DEC_WISE']
             plt = plot_radec_wisecat(data=wisedata, radius=3.0,
+                                     fill=False,
                                      source=sourceName,
                                      radec_centre=radec_centre,
                                      colnames_radec=colnames_radec,
@@ -407,13 +405,13 @@ if __name__ == "__main__":
                                     plt=plt,
                                     debug=debug)
 
-
         if args.invert_xaxis:
             plt.gca().invert_xaxis()
+            print('Inverting figure x-axis')
 
-        plotfile = source + '_COADD_radec.png'
+
+        plotfile = sourceName + '_COADD_radec.png'
         plt.savefig(plotfile)
         print('Saving: ', plotfile)
-
 
         plt.show()

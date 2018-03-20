@@ -8,6 +8,7 @@ from librgm.plotid import plotid
 def plot_radec_wisecat(data=None,
                        source=None, radius=3.0,
                        radec_centre=None,
+                       fill=False,
                        colnames_radec=['RAJ2000', 'DEJ2000'],
                        xrange = [-2.5, 2.5],
                        yrange = [-2.5, 2.5],
@@ -110,23 +111,24 @@ def plot_radec_wisecat(data=None,
     ax = plt.gcf().gca()
     for x, y in zip(xdata, ydata):
         print(x, y, radius)
-        circle = plt.Circle((x, y), radius,
+        circle = plt.Circle((x, y), radius, fill=fill,
                             color='red', alpha=0.1,
                             edgecolor='red',
                             linestyle='dashed', linewidth=1.0)
         ax.add_artist(circle)
 
         # draw line around edge with alpha = 1.0
-        circle = plt.Circle((x, y), radius, fill=False,
+        circle = plt.Circle((x, y), radius, fill=fill,
                             color='red', alpha=1.0,
                             edgecolor='red',
                             linestyle='dashed', linewidth=1.0)
         ax.add_artist(circle)
 
-
-    plt.plot(xdata, ydata, '+', color='red')
+    ndata =  len(xdata)
+    plt.plot(xdata, ydata, '+', color='red', label='WISE: ' + str(ndata))
     plt.xlim(xrange)
     plt.ylim(yrange)
+    plt.legend(fontsize='small')
 
     plotfile = source + '_COADD_radec.png'
     plt.savefig(plotfile)

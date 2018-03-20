@@ -120,10 +120,12 @@ def plot_radec_vhscat(data=None,
                             linestyle='dashed', linewidth=1.0)
         ax.add_artist(circle)
 
-
-    plt.plot(xdata, ydata, '+', color='orange')
+    ndata = len(xdata)
+    plt.plot(xdata, ydata, '+', color='orange', label='VHS:' + str(ndata))
     plt.xlim(xrange)
     plt.ylim(yrange)
+
+    plt.legend(fontsize='small')
 
     plotfile = source + '_COADD_radec.png'
     plt.savefig(plotfile)

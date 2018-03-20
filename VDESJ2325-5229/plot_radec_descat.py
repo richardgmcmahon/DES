@@ -280,7 +280,7 @@ def plot_radec_descat(data=None, release='Y1A1',
 
     plt.xlabel('Delta RA (arc seconds)')
     plt.ylabel('Delta Dec (arc seconds)')
-    plt.legend(fontsize='medium')
+    plt.legend(fontsize='small')
     plotid()
 
     plotfile = source + '_COADD_radec.png'
