@@ -57,6 +57,8 @@ def getargs():
     """
     parse command line arguements
 
+    not all args are active
+
     """
 
     import argparse
