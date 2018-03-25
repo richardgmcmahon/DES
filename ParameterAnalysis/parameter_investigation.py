@@ -129,6 +129,7 @@ import corner
 from astropy.table import Table
 import astropy.io.fits as fits
 import astropy.io.fits.compression
+from astropy.stats import mad_std
 
 
 sys.path.append('/home/rgm/soft/python/lib/')
@@ -162,13 +163,12 @@ def explore_table_header(table=None, infile=None, debug=True):
 
     # read astropy.Table
     table = Table.read(infile)
-    help(table)
 
     # read the header using astropy.io.fits
     # returns a HDUList object
     # see also http://docs.astropy.org/en/stable/io/fits/api/headers.htm
     hdulist = fits.open(infile)
-    help(hdulist)
+    # help(hdulist)
     print('type(hdulist):', type(hdulist))
     print('Number of HDUs:', len(hdulist))
     print('hdulist.filename:', hdulist.filename())
@@ -242,7 +242,7 @@ def make_hist(xdata=None, column=None, units=None, comment=None,
     ax1.set_xticklabels(labels1, rotation=270)
     text = ("Min: " + str(min(xdata)) + "\nMax: " + str(max(xdata)) +
             "\nMedian: " + str(np.median(xdata)) + "\nSigma MAD: " +
-            str(1.4826 * stats.MAD(xdata, np.median(xdata))) + "\n1st %ile: " +
+            str(mad_std(xdata)) + "\n1st %ile: " +
             str(pers[0]) + "\n99th %ile: " + str(pers[1]))
     ax1.text(0.2, 0.7, text,
              transform=ax1.transAxes, bbox=dict(facecolor='blue', alpha=0.2))
@@ -376,7 +376,7 @@ def histograms(datapath=None, filename=None, debug=False,
                 " " + hdr[1].header.comments["TTYPE" + str(i2)] + ")"
             if len(xdata) > 1:
                 #for xdata in t[col]:
-                make_hist(xdata, column, units, comment, band,
+                make_hist(xdata, column, units, comment, waveband,
                           file_start + file_end,
                           out_path, zoom=zoom, save=save)
             else:
@@ -387,19 +387,19 @@ def histograms(datapath=None, filename=None, debug=False,
 
     return
 
-                    #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
+    #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
 
 
-def AB_image(dir, file_start, file_end, bands):
+def AB_image(dir, file_start, file_end, wavebands):
     """
     explore the image size estimators
 
     """
 
-    for band in bands:
-        with fits.open(dir + file_start + band + file_end) as hlist:
+    for waveband in wavebands:
+        with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
-            if band == "g":
+            if waveband == "g":
                 A0s = data["A_IMAGE"]
                 B0s = data["B_IMAGE"]
                 fwhm0s = data["FWHM_IMAGE"]
@@ -420,7 +420,7 @@ def AB_image(dir, file_start, file_end, bands):
                 plt.plot(xdata, ydata, "k.", ms=1)
                 plt.xlabel("A_IMAGE * B_IMAGE")
                 plt.ylabel("ISOAREA_IMAGE")
-                plt.title(infile + ':' + band, fontsize='medium')
+                plt.title(infile + ':' + waveband, fontsize='medium')
                 plotid()
                 plt.show()
 
@@ -434,7 +434,7 @@ def AB_image(dir, file_start, file_end, bands):
                 plt.plot(xdata, ydata, "k.", ms=1)
                 plt.xlabel("A_IMAGE * B_IMAGE")
                 plt.ylabel("FWHM_IMAGE")
-                plt.title(infile + ': ' + band, fontsize='small')
+                plt.title(infile + ': ' + waveband, fontsize='small')
                 plotid()
                 plt.show()
 
@@ -453,16 +453,16 @@ def AB_image(dir, file_start, file_end, bands):
 
 
 
-def kron_radius(dir, file_start, file_end, bands,
+def kron_radius(dir, file_start, file_end, wavebands,
                 tile=None,
                 run=None):
 
-    for band in bands:
-        with fits.open(dir + file_start + band + file_end) as hlist:
+    for waveband in wavebands:
+        with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
             ks = data["KRON_RADIUS"]
             print('min, max:', min(ks), max(ks))
-            if band == "g":
+            if waveband == "g":
                 k0s = ks
             else:
                 k1s = ks
@@ -484,12 +484,13 @@ def kron_radius(dir, file_start, file_end, bands,
                 n += 1
 
 
-def elongation(dir, file_start, file_end, bands, band='i',
+def elongation(dir, file_start, file_end,
+               wavebands, waveband='i',
                tile=None, run=None):
     """
 
     """
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         es = data["ELONGATION"]
 
@@ -503,10 +504,11 @@ def elongation(dir, file_start, file_end, bands, band='i',
             plt.show()
 
 
-def XY_min_max(dir, file_start, file_end, bands, band='i',
+def XY_min_max(dir, file_start, file_end,
+               wavebands, waveband='i',
                tilename=None, run=None):
     band = "i"
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         xs = data["XMAX_IMAGE"] - data["XMIN_IMAGE"]
 
@@ -520,13 +522,14 @@ def XY_min_max(dir, file_start, file_end, bands, band='i',
             plt.show()
 
 
-def isoarea(dir, file_start, file_end, bands, band='i',
+def isoarea(dir, file_start, file_end,
+            wavebands, waveband='i',
             tilename=None, run=None):
     """
 
     """
 
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         xs = data["ISOAREA_IMAGE"]
 
@@ -541,10 +544,11 @@ def isoarea(dir, file_start, file_end, bands, band='i',
             plt.show()
 
 
-def petro_radius(dir, file_start, file_end, bands, band='i',
+def petro_radius(dir, file_start, file_end,
+                 wavebands, waveband='i',
                  filename=None, run=None):
 
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         xs = data["PETRO_RADIUS"]
 
@@ -559,10 +563,11 @@ def petro_radius(dir, file_start, file_end, bands, band='i',
             plt.show()
 
 
-def FWHM(dir, file_start, file_end, bands, band='i',
+def FWHM(dir, file_start, file_end,
+         wavebands, waveband='i',
          tilename=None, run=None):
 
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         xs = data["FWHM_IMAGE"]
 
@@ -578,12 +583,12 @@ def FWHM(dir, file_start, file_end, bands, band='i',
             plt.show()
 
 
-def flux_radius(dir, file_start, file_end, bands):
+def flux_radius(dir, file_start, file_end, wavebands):
     """
 
     """
-    band = "i"
-    with fits.open(dir + file_start + band + file_end) as hlist:
+    waveband = "i"
+    with fits.open(dir + file_start + waveband + file_end) as hlist:
         data = hlist[1].data
         xs = data["FLUX_RADIUS"]
 
@@ -599,13 +604,12 @@ def flux_radius(dir, file_start, file_end, bands):
             plt.show()
 
 
-def fluxes(dir, file_start, file_end, bands):
+def fluxes(dir, file_start, file_end, wavebands):
     """
 
     """
-    123412341234
-    for band in bands:
-        with fits.open(dir + file_start + band + file_end) as hlist:
+    for waveband in wavebands:
+        with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
             fauto = data["FLUX_AUTO"]
             fmax = data["FLUX_MAX"]
@@ -663,7 +667,7 @@ def fluxes(dir, file_start, file_end, bands):
             ax.plot(xs, ys, "k.", ms=1)
             ax.set_xlabel(xlabel)
             ax.set_ylabel(ylabel)
-            ax.set_title(file_start + ':' + band)
+            ax.set_title(file_start + ':' + waveband)
             plotid.plotid()
             medx = np.median(xs)
             medy = np.median(ys)
@@ -691,7 +695,7 @@ def fluxes(dir, file_start, file_end, bands):
             figpath = "/home/sr525/Graphs/Parameters/"
             plt.savefig(figpath +
                         xlabel + "_v_" + ylabel + "_" + file_start +
-                        band + ".png")
+                        waveband + ".png")
             plt.close()
             #plt.show()
 
@@ -714,16 +718,16 @@ def fluxes(dir, file_start, file_end, bands):
             """
 
 
-def ra_dec(dir, file_start, file_end, bands):
+def ra_dec(dir, file_start, file_end, wavebands):
     """
 
     """
     rass = [[], [], [], [], []]
     decss = [[], [], [], [], []]
     numss = [[], [], [], [], []]
-    for band in bands:
-        b = bands.index(band)
-        with fits.open(dir + file_start + band + file_end) as hlist:
+    for waveband in wavebands:
+        b = wavebands.index(waveband)
+        with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
             ras = data["ALPHAWIN_J2000"]
             decs = data["DELTAWIN_J2000"]
@@ -771,20 +775,20 @@ def ra_dec(dir, file_start, file_end, bands):
         r += 1
 
 
-def background(dir, file_start, file_end, bands):
-    for band in bands:
-        with fits.open(dir + file_start + band + ".fits.fz") as hlist:
+def background(dir, file_start, file_end, wavebands):
+    for waveband in wavebands:
+        with fits.open(dir + file_start + waveband + ".fits.fz") as hlist:
             im = hlist[1].data
             print(np.median(im))
 
-        with fits.open(dir + file_start + band + file_end) as hlist1:
+        with fits.open(dir + file_start + waveband + file_end) as hlist1:
             data = hlist1[1].data
             print(np.median(data["BACKGROUND"]))
 
 
-def chi(dir, file_start, file_end, bands):
-    for band in bands:
-        with fits.open(dir + file_start + band + file_end) as hlist:
+def chi(dir, file_start, file_end, wavebands):
+    for waveband in wavebands:
+        with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
             xs = data["CHI2_PSF"]
 
@@ -851,11 +855,17 @@ def des_analysis(datapath=None, tilename=None,
                    columns=columns, waveband=waveband, figpath=figpath,
                    zoom=True, debug=DEBUG)
 
-    AB_image(datapath, filename_prefix, filename_tail, bands)
+    filename_prefix = mk_filename_desdm(tilename=tilename,
+                                        waveband=waveband,
+                                        des_release=des_release)
 
-    kron_radius(dir, file_start, file_end, bands,
+    # filename_tail = '_cat.fits'
+    AB_image(datapath, filename_prefix, filename_tail, wavebands)
+
+    kron_radius(dir, file_start, file_end, wavebands,
                 tile=tile, run=run)
-    elongation(dir, file_start, file_end, bands,
+
+    elongation(dir, file_start, file_end, wavebands,
                tile=tile, run=run)
 
 
@@ -955,10 +965,10 @@ def corner_example_table(table, scatter=False,
     # Set up the parameters of the problem.
     ndim, nsamples = 3, 50000
 
-    help(table)
-    help(table.columns)
+    # help(table)
     print('len(table):', len(table))
     print('len(table.columns):', len(table.columns))
+    print(table.columns)
 
     # Generate some fake data.
     # // Floor Division
@@ -1038,22 +1048,7 @@ def corner_example_table(table, scatter=False,
     return
 
 
-
-
-if __name__ == '__main__':
-    """
-
-
-    """
-    # import doctest
-    # doctest.testmod()
-
-    # place after __main__ unless needed by functions prior to __main__
-    # The ConfigParser module has been renamed to configparser
-    import ConfigParser as configparser
-    import argparse
-
-    t0 = time.time()
+def getargs():
 
     # setup argparse
     description = 'Catalogue parameter analysis'
@@ -1114,6 +1109,26 @@ if __name__ == '__main__':
 
     print('Number of arguments:', len(sys.argv), 'arguments: ', sys.argv[0])
     args = parser.parse_args()
+
+    return args
+
+
+if __name__ == '__main__':
+    """
+
+
+    """
+    # import doctest
+    # doctest.testmod()
+
+    # place after __main__ unless needed by functions prior to __main__
+    # The ConfigParser module has been renamed to configparser
+    import ConfigParser as configparser
+    import argparse
+
+    t0 = time.time()
+
+    args = getargs()
 
     # logging.basicConfig(
     #    level=logging.INFO,
@@ -1330,21 +1345,21 @@ if __name__ == '__main__':
     for file_start in ["DES0332-2749_", "DES1000+0209_", "DES0453-4457_"]:
         t = Table.read(path + "/" + file_start + "i" + file_end)
         cols = t.columns
-        histograms(path + "/", file_start, file_end, cols, bands,
+        histograms(path + "/", file_start, file_end, cols, wavebands,
                    zoom=True)
-    AB_image(dir, file_start, file_end, bands)
+    AB_image(dir, file_start, file_end, wavebands)
 
-    kron_radius(dir, file_start, file_end, bands,
+    kron_radius(dir, file_start, file_end, wavebands,
                 tile=tile, run=run)
-    elongation(dir, file_start, file_end, bands,
+    elongation(dir, file_start, file_end, wavebands,
                tile=tile, run=run)
 
-    #XY_min_max(dir, file_start, file_end, bands)
-    #isoarea(dir, file_start, file_end, bands)
-    #petro_radius(dir, file_start, file_end, bands)
-    #FWHM(dir, file_start, file_end, bands)
-    #fluxes(dir, file_start, file_end, bands)
-    #flux_radius(dir, file_start, file_end, bands)
-    #ra_dec(dir, file_start, file_end, bands)
-    #background(dir, file_start, file_end, bands)
-    #chi(dir, file_start, file_end, bands)
+    #XY_min_max(dir, file_start, file_end, wavebands)
+    #isoarea(dir, file_start, file_end, wavebands)
+    #petro_radius(dir, file_start, file_end, wavebands)
+    #FWHM(dir, file_start, file_end, wavebands)
+    #fluxes(dir, file_start, file_end, wavebands)
+    #flux_radius(dir, file_start, file_end, wavebands)
+    #ra_dec(dir, file_start, file_end, wavebands)
+    #background(dir, file_start, file_end, wavebands)
+    #chi(dir, file_start, file_end, wavebands)
