@@ -1,10 +1,31 @@
 import sys
+import numpy as np
 
 sys.path.append('/home/rgm/soft/python/lib/')
 from librgm.plotid import plotid
 
 
-def des_parameter_analysis(data=None, index=None):
+def moments2ellipse(X2, Y2, XY):
+    """
+    convert Sextractor 2nd order moments to ellipse parameters
+
+    """
+
+    A2 = (0.5 * (X2 + Y2)) + np.sqrt(np.power((X2 - Y2), 2) + np.power(XY, 2))
+    a = np.sqrt(A2)
+
+    B2 = (0.5 * (X2 + Y2)) - np.sqrt(np.power((X2 - Y2), 2) + np.power(XY, 2))
+    b = np.sqrt(B2)
+
+    tan2theta = 2.0 * XY / (X2 - Y2)
+
+    # using arctan2 and not arctan
+    theta = np.rad2deg(np.arctan2(tan2theta) / 2.0)
+
+    return a, b, theta
+
+
+def des_parameter_analysis(data=None, release='Y1A1', index=None):
     """
     do some analysis of the shape parameters
 
@@ -55,8 +76,10 @@ def des_parameter_analysis(data=None, index=None):
 
 
 def plot_radec_descat(data=None, release='Y1A1',
-                      source=None,
+                      sourceName=None,
                       radius = 0.45, alpha=0.2,
+                      plot_ellipses=True,
+                      line_style=None,
                       colnames_radec=['RA', 'DEC'],
                       radec_centre=None,
                       xrange=[-2.5, 2.5],
@@ -80,7 +103,6 @@ def plot_radec_descat(data=None, release='Y1A1',
 
     import matplotlib.pyplot as plt
     from matplotlib.patches import Circle, Ellipse
-
 
     infile = None
     if 'filename' in data.meta:
@@ -185,8 +207,8 @@ def plot_radec_descat(data=None, release='Y1A1',
     for iband, WAVEBAND in enumerate(WAVEBANDS):
 
         # windowed positions per waveband
-        ra = data['ALPHAWIN_J2000_'+WAVEBAND]
-        dec = data['DELTAWIN_J2000_'+WAVEBAND]
+        ra = data['ALPHAWIN_J2000_' + WAVEBAND]
+        dec = data['DELTAWIN_J2000_' + WAVEBAND]
 
         delta_ra = (ra - radec_centre[0])*3600.0 * \
                    np.cos(np.deg2rad(radec_centre[1]))
@@ -214,15 +236,26 @@ def plot_radec_descat(data=None, release='Y1A1',
         ALPHAWIN_J2000 = data['ALPHAWIN_J2000_' + WAVEBAND][itest]
         DELTAWIN_J2000 = data['DELTAWIN_J2000_' + WAVEBAND][itest]
 
+        AWIN_IMAGE = data['AWIN_IMAGE_' + WAVEBAND][itest]
+        BWIN_IMAGE = data['BWIN_IMAGE_' + WAVEBAND][itest]
+        THETAWIN_IMAGE = data['THETAWIN_IMAGE_' + WAVEBAND][itest]
+
+        X2 = data['X2WIN_IMAGE_' + WAVEBAND][itest]
+        Y2 = data['Y2WIN_IMAGE_' + WAVEBAND][itest]
+        XY = data['XYWIN_IMAGE_' + WAVEBAND][itest]
+
         # loop through the sources
+        print('Loop through the sources:', len(xdata), WAVEBAND)
         for i, ra, in enumerate(xdata):
 
+            print(i, WAVEBAND, delta_ra[i], delta_dec[i])
             # plot the sources as colored filled circles
-            circle = Circle([delta_ra[i], delta_dec[i]],
-                            radius,
-                            edgecolor='none', facecolor=colors[iband],
-                            alpha=alpha)
-            plt.gca().add_patch(circle)
+            if not plot_ellipses:
+                circle = Circle([delta_ra[i], delta_dec[i]],
+                                radius,
+                                edgecolor='none', facecolor=colors[iband],
+                                alpha=alpha)
+                plt.gca().add_patch(circle)
 
             coadd_objects_id = COADD_OBJECTS_ID[i]
 
@@ -268,26 +301,57 @@ def plot_radec_descat(data=None, release='Y1A1',
                     "{:7.1f}".format((YMIN_IMAGE[i] + YMAX_IMAGE[i]) / 2.0),
                     "{:4d}".format(FLAGS[i]))
 
-                # plot as ellipse using the
+            # plot as ellipse using the
+            width = 1.5 * AWIN_IMAGE[i]
+            height = 1.5 * BWIN_IMAGE[i]
+            # by eye it looks like angle is reflected
+            # maybe need to swap if/when x-axis inverted
+            angle = 180.0 - THETAWIN_IMAGE[i]
+
+            print('i, a, b, theta, band, dRA, dDec:',
+                  i, height, width, angle, WAVEBAND,
+                  delta_ra[i], delta_dec[i])
+            print(AWIN_IMAGE[i], BWIN_IMAGE[i], THETAWIN_IMAGE[i])
+
+            a, b, theta = moments2ellipse(X2[i], Y2[i], XY[i])
+            print('i, a, b, theta:', i, a, b, theta)
+
+
+            # https://matplotlib.org/api/_as_gen/matplotlib.patches.Ellipse.html
+                  # plot the ellipse marker and edge separately
+            ellipse = Ellipse([delta_ra[i], delta_dec[i]],
+                width=width/2.0, height=height/2.0, angle=angle,
+                edgecolor='none', facecolor=colors[iband],
+                alpha=alpha)
+            plt.gca().add_patch(ellipse)
+
+            # add solid line to edgecolor for G and Z
+            # G and Z chosen since large wavelength range
+            # Y not used since lower S/N that Z in DES
+            # G is often poorer seeing than Z so can bias size
+            if WAVEBAND in ['G', 'Z']:
+                edgecolor=colors[iband]
                 ellipse = Ellipse([delta_ra[i], delta_dec[i]],
-                    width=width/2.0, height=height/2.0, angle=angle,
-                    edgecolor='none', facecolor=colors[iband],
-                    alpha=alpha)
-                plt.gca().add_patch(ellipse)
+                              fill=False,
+                              width=width/2.0, height=height/2.0,
+                              angle=angle,
+                              facecolor='none',
+                              edgecolor=edgecolor,
+                              alpha=1.0)
+
+            plt.gca().add_patch(ellipse)
 
 
         plt.plot(delta_ra, delta_dec, '.', color=colors[iband],
             label=WAVEBAND + ': ' + str(ndata))
 
-
-    plt.suptitle('Windowed positions: ' + source)
-
+    plt.suptitle('Windowed positions: ' + sourceName)
     plt.xlabel('Delta RA (arc seconds)')
     plt.ylabel('Delta Dec (arc seconds)')
     plt.legend(fontsize='small')
     plotid()
 
-    plotfile = source + '_COADD_radec.png'
+    plotfile = sourceName + '_COADD_radec.png'
     plt.savefig(plotfile)
     #plt.clf()
     print('Saving: ', plotfile)

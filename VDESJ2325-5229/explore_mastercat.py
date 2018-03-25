@@ -64,7 +64,9 @@ def getargs():
     import argparse
 
     description = ''
-    epilog = ''
+    epilog = """WARNING: Not all options are supported; this
+                was a cut and paste from VDESJ2325-5229_analysis.py
+             """
     parser =  argparse.ArgumentParser(
         description=description, epilog=epilog,
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -76,11 +78,11 @@ def getargs():
 
     format_default = 'COADD'
     parser.add_argument("--format", default=format_default,
-        help="format as SE or COADD [Default]")
+        help="format as SE or COADD")
 
     release_default = 'Y1A1'
     parser.add_argument("--release", default=release_default,
-        help="release  as a string e.g. Y1A1 [Default]")
+        help="release  as a string e.g. Y1A1")
 
     parser.set_defaults(source='VDESJ2325-5229')
     parser.add_argument("--source",
@@ -130,12 +132,12 @@ def getargs():
     # single epoch pixel size 0.267 arcsec/pixel
     parser.add_argument("--size",
                         type=int,
-                        default=8,
-                        help="Size in arcsecs")
+                        default=10.0,
+                        help="Width in arcsecs")
 
     parser.add_argument("--zoom_size",
                         type=int,
-                        default=4,
+                        default=5.0,
                         help="Zoom in size in arcsecs")
 
     parser.add_argument("--size_pixels",
@@ -413,7 +415,6 @@ if __name__ == "__main__":
         if args.invert_xaxis:
             plt.gca().invert_xaxis()
             print('Inverting figure x-axis')
-
 
         plotfile = sourceName + '_COADD_radec.png'
         plt.savefig(plotfile)

@@ -1,5 +1,10 @@
 from __future__ import print_function, division
+"""
 
+Original by Fernanda Ostrovski
+
+
+"""
 
 import numpy as np
 
@@ -15,10 +20,9 @@ def mad(data, median=None, sigma=False):
     return mad
 
 
-
 def main(datapath=None, filename=None, release=None, tile=None):
 
-    t=Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_g_cat.fits')
+    t = Table.read('/data/desardata/' + release + '/' + tile + '/' + tile + '_g_cat.fits')
     columns=t.columns
     t=Table.read('/data/desardata/'+release+'/'+tile+'/'+tile+'_merged_cat.fits')
     n=0
@@ -48,7 +52,7 @@ def main(datapath=None, filename=None, release=None, tile=None):
     for column in columns:
         if column=='FLUX_APER' or column=='FLUXERR_APER' or column=='MAG_APER' or column=='MAGERR_APER':
             col=column
-            for band in bands:
+            for band in wavebands:
                 print('band:', band)
                 a1=[]
                 a2=[]
@@ -166,10 +170,10 @@ def main(datapath=None, filename=None, release=None, tile=None):
 if __name__ == '__main__':
 
 
-    tile='DES0453-4457'
-    releases=['SVA1','Y1A1']
-    #releases=['Y1A1','SVA1']
-    bands=['_G','_R','_I','_Z','_Y']
+    tile = 'DES0453-4457'
+    releases = ['SVA1','Y1A1']
+    #releases = ['Y1A1','SVA1']
+    wavebands = ['_G','_R','_I','_Z','_Y']
 
 
     for release in releases:

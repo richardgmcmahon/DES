@@ -139,9 +139,9 @@ from librgm.plotid import plotid
 
 
 # /Users/rgm/soft/sreed/Possibles_Analysis.py
-import Possibles_Analysis as PA
-import stats
-from match_lists import match_lists as ml
+# import Possibles_Analysis as PA
+# import stats
+# from match_lists import match_lists as ml
 
 
 def explore_table_header(table=None, infile=None, debug=True):
@@ -1240,7 +1240,7 @@ if __name__ == '__main__':
 
     t.info()
     t.info('stats')
-    table_stats(table)
+    # table_stats(t)
 
     columns = t.columns
     print('Number of columns:', len(columns))
