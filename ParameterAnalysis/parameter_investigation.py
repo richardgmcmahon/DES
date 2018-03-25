@@ -390,13 +390,18 @@ def histograms(datapath=None, filename=None, debug=False,
     #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
 
 
-def AB_image(dir, file_start, file_end, wavebands):
+def AB_image(datapath=datapath, filename=filename,
+             waveband=waveband, figpath=figpath,
+             debug=DEBUG):
+
     """
     explore the image size estimators
 
     """
 
+    infile = datapath + filename
     for waveband in wavebands:
+        infile = datapath + filename
         with fits.open(dir + file_start + waveband + file_end) as hlist:
             data = hlist[1].data
             if waveband == "g":
@@ -825,16 +830,36 @@ def mk_filename_desdm(tilename=None, waveband=None,
     return filename
 
 
-def des_analysis(datapath=None, tilename=None,
+def des_analysis(datapath=None,
+                 tilename=None,
                  wavebands=None,
                  columns=None,
                  des_release=None,
-                 figpath=None, debug=False):
+                 figpath=None,
+                 debug=False):
     """
     columns are passed as input to allow specification of columns
     to analyse
 
     """
+
+    for waveband in wavebands:
+
+        filename = mk_filename_desdm(tilename=tilename,
+                                     waveband=waveband,
+                                     des_release=des_release)
+
+        infile = datapath + '/' + filename
+
+        print('filename:', filename)
+        print('infile:', infile)
+        print('waveband:', waveband)
+
+
+        AB_image(datapath=datapath, filename=filename,
+                 waveband=waveband, figpath=figpath,
+                 debug=DEBUG)
+
 
     for waveband in wavebands:
 
@@ -855,12 +880,14 @@ def des_analysis(datapath=None, tilename=None,
                    columns=columns, waveband=waveband, figpath=figpath,
                    zoom=True, debug=DEBUG)
 
+
     filename_prefix = mk_filename_desdm(tilename=tilename,
                                         waveband=waveband,
                                         des_release=des_release)
 
     # filename_tail = '_cat.fits'
-    AB_image(datapath, filename_prefix, filename_tail, wavebands)
+
+
 
     kron_radius(dir, file_start, file_end, wavebands,
                 tile=tile, run=run)
@@ -1301,11 +1328,13 @@ if __name__ == '__main__':
                          figpath=figpath, debug=DEBUG)
 
     if survey_project == 'DES':
-        des_analysis(datapath=datapath, tilename=tilename,
+        des_analysis(datapath=datapath,
+                     tilename=tilename,
                      wavebands=waveband,
                      columns=columns,
                      des_release=des_release,
-                     figpath=figpath, debug=DEBUG)
+                     figpath=figpath,
+                     debug=DEBUG)
 
 
     if survey_project == 'PS1':
@@ -1343,10 +1372,13 @@ if __name__ == '__main__':
     path = "/data/desardata/SVA1/" + file_start[:-1] + "/"
 
     for file_start in ["DES0332-2749_", "DES1000+0209_", "DES0453-4457_"]:
-        t = Table.read(path + "/" + file_start + "i" + file_end)
+        infile = path + "/" + file_start + "i" + file_end
+        print('infile:', infile)
+        t = Table.read(infile)
         cols = t.columns
         histograms(path + "/", file_start, file_end, cols, wavebands,
                    zoom=True)
+
     AB_image(dir, file_start, file_end, wavebands)
 
     kron_radius(dir, file_start, file_end, wavebands,
