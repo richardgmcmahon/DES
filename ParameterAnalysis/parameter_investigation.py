@@ -131,6 +131,7 @@ import astropy.io.fits as fits
 import astropy.io.fits.compression
 from astropy.stats import mad_std
 
+from moments2ellipse import *
 
 sys.path.append('/home/rgm/soft/python/lib/')
 sys.path.append('/home/rgm/soft/sreed/')
@@ -214,7 +215,8 @@ def make_hist(xdata=None, column=None, units=None, comment=None,
 
     """
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8.0, 8.0))
+
     # what does this do?
     ids = np.where((xdata == xdata))[0]
     xdata = xdata[ids]
@@ -389,73 +391,288 @@ def histograms(datapath=None, filename=None, debug=False,
 
     #make_hist(xs, col, units, comment, band, file_start + file_end, out_path, zoom = zoom, save = save)
 
+def plot_psfex_catpars():
+    """
 
-def AB_image(datapath=datapath, filename=filename,
-             waveband=waveband, figpath=figpath,
-             debug=DEBUG):
+    from psfex/psfcat_analysis.py and psf_analysis.py
+
+        # extract a flux/mag vector
+        ydata = data['FLUX_APER'][:,7]
+
 
     """
-    explore the image size estimators
+
+    ydata = np.log10(ydata)
+
+    print('len(xdata), len(ydata): ', len(xdata), len(ydata))
+    print('min(xdata), max(xdata): ', min(xdata), max(xdata))
+    print('min(ydata), max(ydata): ', min(ydata), max(ydata))
+
+
+    #plt.plot(xdata, ydata, '.k')
+    ndata=len(xdata)
+
+    plt.scatter(xdata, ydata, marker='.', s=1, label=str(ndata))
+    xrange=(-1.0,20.0)
+    plt.xlim(xrange)
+    plt.ylim(0.0,8.0)
+
+    xline=xrange
+    FLUX_SAT=65000
+    yline=[np.log10(FLUX_SAT), np.log10(FLUX_SAT)]
+    plt.plot(xline, yline, color='red')
+
+    plt.ylabel('Log(FLUX_APER_8) (uncalibrated)')
+    plt.xlabel('FLUX_RADIUS_HALF_LIGHT (pixels)')
+    plt.legend()
+
+    title= infile
+    plt.title(title, fontsize='medium')
+    plotid(progname=True)
+
+    filename = os.path.basename(infile)
+
+    plotfile= filename + '_flux_radius_v_flux_aper_8.png'
+
+    plt.savefig(plotfile)
+    plt.clf()
+    print('Saving: ', plotfile)
+
+
+    plt.figure(figsize=(8.0, 8.0))
+
+    # extract a flux/mag vector
+    xdata=data['FLUX_APER'][:,7]
+    ydata=xdata/data['FLUXERR_APER'][:,7]
+
+    #ydata=data['MAG_APER'][:,3]
+
+    print('min(ydata), max(ydata): ', min(ydata), max(ydata))
+
+    #add a nominal zeropoint
+    #ydata=ydata[0:,2]+25.0
+    xdata = np.log10(xdata)
+    ydata = np.log10(ydata)
+
+    print('len(xdata), len(ydata): ', len(xdata), len(ydata))
+    print('min(xdata), max(xdata): ', min(xdata), max(xdata))
+    print('min(ydata), max(ydata): ', min(ydata), max(ydata))
+
+    #plt.plot(xdata, ydata, '.k')
+    ndata=len(xdata)
+
+    plt.scatter(xdata, ydata, marker='.', s=1, label=str(ndata))
+    xrange=(0.0,8.0)
+    plt.xlim(xrange)
+    yrange=(-2.0,5.0)
+    plt.ylim(yrange)
+
+
+    FLUX_SAT=65000
+    xline=[np.log10(FLUX_SAT), np.log10(FLUX_SAT)]
+    yline=yrange
+    plt.plot(xline, yline, color='red', linestyle='--')
+
+    xline=xrange
+    SAMPLE_MINSN=20
+    yline=[np.log10(SAMPLE_MINSN), np.log10(SAMPLE_MINSN)]
+    plt.plot(xline, yline, color='red', linestyle='--')
+
+    SAMPLE_MAXELLIP=0.3
+
+
+    plt.xlabel('Log(FLUX_APER_8) (uncalibrated)')
+    plt.ylabel('S/N')
+    plt.legend()
+
+    title= infile
+    plt.title(title, fontsize='medium')
+    plotid(progname=True)
+
+    filename = os.path.basename(infile)
+
+    plotfile= filename + '_fluxerr_v_flux_aper_8.png'
+
+    plt.savefig(plotfile)
+    plt.clf()
+    print('Saving: ', plotfile)
+
+    return data
+
+
+def image_shape(data=None,
+                datapath=None, filename=None,
+                waveband='i',
+                figpath='./',
+                debug=False):
+
+    """
+    explore the Sextractor image shape parameters
+
+    http://sextractor.readthedocs.io/en/latest/Measurements.html
+
+    Detection image:
+    A_IMAGE
+    B_IMAGE
+    THETA_IMAGE
+
+    Measurement image
+    AWIN_IMAGE pix
+    BWIN_IMAGE pix
+    THETAWIN_IMAGE deg
+
+    Also
+    A_WORLD
+    B_WORLD
+    THETA_J2000
+    ELONGATION
+    FLUX_RADIUS
+
+    ISOAREA_IMAGE   int32                pix2
+    ISOAREAF_IMAGE   int32                pix2
+    ISOAREA_WORLD float32                deg2
+    ISOAREAF_WORLD float32                deg2
+
+    FWHMPSF_IMAGE pix
+    FWHMPSF_WORLD deg
+
+    FWHM_IMAGE
+    FWHM_WORLD
 
     """
 
     infile = datapath + filename
-    for waveband in wavebands:
-        infile = datapath + filename
-        with fits.open(dir + file_start + waveband + file_end) as hlist:
-            data = hlist[1].data
-            if waveband == "g":
-                A0s = data["A_IMAGE"]
-                B0s = data["B_IMAGE"]
-                fwhm0s = data["FWHM_IMAGE"]
 
-            else:
-                A1s = data["A_IMAGE"]
-                B1s = data["B_IMAGE"]
-                xdata = A1s * B1s
-                xdata = np.log10(xdata)
-                fwhm1s = data["FWHM_IMAGE"]
-                #print sum(A0s - A1s)
-                #print sum(B0s - B1s)
-                #print fwhm1s**2/(A1s**2 + B1s**2)
-                #plt.plot(fwhm1s**2, (A1s**2 + B1s**2), "k.")
-                #plt.plot(fwhm1s**2, ((A1s+B1s)/2.0)**2, "r.")
-                isos = data["ISOAREA_IMAGE"]
-                ydata = np.log10(isos)
-                plt.plot(xdata, ydata, "k.", ms=1)
-                plt.xlabel("A_IMAGE * B_IMAGE")
-                plt.ylabel("ISOAREA_IMAGE")
-                plt.title(infile + ':' + waveband, fontsize='medium')
-                plotid()
-                plt.show()
+    print('infile:', infile)
+    if data is None:
+        hdulist = fits.open(infile)
+        data = hdulist[1].data
+
+    X2 = data['X2_IMAGE']
+    Y2 = data['Y2_IMAGE']
+    XY = data['Y2_IMAGE']
+
+    A_moments, B_moments, THETA_moments = moments2ellipse(X2, Y2, XY)
+
+    A = data["A_IMAGE"]
+    B = data["B_IMAGE"]
+    THETA = data['THETA_IMAGE']
+
+    xdata = A * B
+    xdata = np.log10(xdata)
+
+    fwhm = data["FWHM_IMAGE"]
+    #print sum(A0s - A1s)
+    #print sum(B0s - B1s)
+    #print fwhm1s**2/(A1s**2 + B1s**2)
+    #plt.plot(fwhm1s**2, (A1s**2 + B1s**2), "k.")
+    #plt.plot(fwhm1s**2, ((A1s+B1s)/2.0)**2, "r.")
+
+    isoarea = data["ISOAREA_IMAGE"]
+    ydata = np.log10(isoarea)
+    ndata = len(xdata)
+
+    plt.figure(figsize=(6.0, 6.0))
+
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+
+    plt.xlabel("A_IMAGE * B_IMAGE")
+    plt.ylabel("ISOAREA_IMAGE")
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plt.show()
+
+    xdata = np.log10(A)
+    ydata = np.log10(A_moments)
+
+    plt.figure(figsize=(6.0, 6.0))
+
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+
+    plt.xlabel('A_IMAGE')
+    plt.ylabel('A_IMAGE_moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+    plotid()
+
+    plt.show()
+
+    xdata = np.log10(B)
+    ydata = np.log10(B_moments)
+
+    plt.figure(figsize=(6.0, 6.0))
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+    plt.xlabel('B_IMAGE')
+    plt.ylabel('B_IMAGE_moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plt.show()
 
 
-                A1s = data["A_IMAGE"]
-                B1s = data["B_IMAGE"]
-                xdata = A1s * B1s
-                xdata = np.log10(xdata)
-                fwhm1s = data["FWHM_IMAGE"]
-                ydata = np.log10(fwhm1s)
-                plt.plot(xdata, ydata, "k.", ms=1)
-                plt.xlabel("A_IMAGE * B_IMAGE")
-                plt.ylabel("FWHM_IMAGE")
-                plt.title(infile + ': ' + waveband, fontsize='small')
-                plotid()
-                plt.show()
+    # xdata = np.log10(THETA)
+    # ydata = np.log10(THETA_moments)
+
+    xdata = THETA
+    ydata = THETA_moments
+
+    print('xrange:', np.min(xdata), np.max(xdata))
+    print('yrange:', np.min(ydata), np.max(ydata))
+
+    plt.figure(figsize=(6.0, 6.0))
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+    plt.xlabel('THETA_IMAGE')
+    plt.ylabel('THETA_IMAGE_moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plt.show()
+
+
+
+    xdata = np.log10(B/A)
+    ydata = np.log10(B_moments/A_moments)
+
+    plt.figure(figsize=(6.0, 6.0))
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+    plt.xlabel('B/A_IMAGE')
+    plt.ylabel('B/A_IMAGE_moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plt.show()
 
 
 
 
-            #if band == "i":
-                #for (n,A) in enumerate(A1s):
-                #    if A > 6.0:
-                #        fig = PA.cutout_image("", data["ALPHAWIN_J2000"][n], data["DELTAWIN_J2000"][n], "DES0332-2749", "20130305000001_DES0332-2749", data["NUMBER"][n], cat_info = True)
-                #        plt.show()
-                #for (n,B) in enumerate(B1s):
-                #    if B > 4.0:
-                #        fig = PA.cutout_image("", data["ALPHAWIN_J2000"][n], data["DELTAWIN_J2000"][n], "DES0332-2749", "20130305000001_DES0332-2749",     data["NUMBER"][n], cat_info = True)
-                #        plt.show()
 
+    plt.figure(figsize=(6.0, 6.0))
+
+    A = data["A_IMAGE"]
+    B = data["B_IMAGE"]
+    xdata = A * B
+    xdata = np.log10(xdata)
+    fwhm = data["FWHM_IMAGE"]
+    ydata = np.log10(fwhm)
+    plt.plot(xdata, ydata, "k.", ms=1)
+    plt.xlabel("A_IMAGE * B_IMAGE")
+    plt.ylabel("FWHM_IMAGE")
+    plt.title(infile + ': ' + waveband, fontsize='small')
+    plotid()
+
+    plt.show()
+
+
+    return
 
 
 def kron_radius(dir, file_start, file_end, wavebands,
@@ -843,6 +1060,7 @@ def des_analysis(datapath=None,
 
     """
 
+    print('wavebands:', wavebands)
     for waveband in wavebands:
 
         filename = mk_filename_desdm(tilename=tilename,
@@ -851,15 +1069,18 @@ def des_analysis(datapath=None,
 
         infile = datapath + '/' + filename
 
+        print('tilename:', tilename)
         print('filename:', filename)
         print('infile:', infile)
         print('waveband:', waveband)
 
+        raw_input("Enter any key to continue: ")
 
-        AB_image(datapath=datapath, filename=filename,
-                 waveband=waveband, figpath=figpath,
-                 debug=DEBUG)
+        image_shape(datapath=datapath, filename=filename,
+                    waveband=waveband, figpath=figpath,
+                    debug=DEBUG)
 
+        raw_input("Enter any key to continue: ")
 
     for waveband in wavebands:
 
@@ -1330,7 +1551,7 @@ if __name__ == '__main__':
     if survey_project == 'DES':
         des_analysis(datapath=datapath,
                      tilename=tilename,
-                     wavebands=waveband,
+                     wavebands=wavebands,
                      columns=columns,
                      des_release=des_release,
                      figpath=figpath,
@@ -1379,7 +1600,7 @@ if __name__ == '__main__':
         histograms(path + "/", file_start, file_end, cols, wavebands,
                    zoom=True)
 
-    AB_image(dir, file_start, file_end, wavebands)
+    image_shape(dir, file_start, file_end, wavebands)
 
     kron_radius(dir, file_start, file_end, wavebands,
                 tile=tile, run=run)

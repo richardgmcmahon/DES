@@ -4,30 +4,12 @@ import numpy as np
 sys.path.append('/home/rgm/soft/python/lib/')
 from librgm.plotid import plotid
 
-
-def moments2ellipse(X2, Y2, XY):
-    """
-    convert Sextractor 2nd order moments to ellipse parameters
-
-    """
-
-    A2 = (0.5 * (X2 + Y2)) + np.sqrt(np.power((X2 - Y2), 2) + np.power(XY, 2))
-    a = np.sqrt(A2)
-
-    B2 = (0.5 * (X2 + Y2)) - np.sqrt(np.power((X2 - Y2), 2) + np.power(XY, 2))
-    b = np.sqrt(B2)
-
-    tan2theta = 2.0 * XY / (X2 - Y2)
-
-    # using arctan2 and not arctan
-    theta = np.rad2deg(np.arctan2(tan2theta) / 2.0)
-
-    return a, b, theta
+from moments2ellipse import *
 
 
 def des_parameter_analysis(data=None, release='Y1A1', index=None):
     """
-    do some analysis of the shape parameters
+    do some analysis of the image shape parameters
 
 
     """
