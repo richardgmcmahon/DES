@@ -11,6 +11,11 @@ def des_parameter_analysis(data=None, release='Y1A1', index=None):
     """
     do some analysis of the image shape parameters
 
+    Note at the moment I plot the ellipse in pixel units; it needs to be
+    converted to arcsecs; The Extractor docs say that a multiplative factor
+    of 3 can be used to convert the intensity weighted sizes to rough isophotal
+    sizes.
+
 
     """
     itest = index
@@ -297,7 +302,6 @@ def plot_radec_descat(data=None, release='Y1A1',
 
             a, b, theta = moments2ellipse(X2[i], Y2[i], XY[i])
             print('i, a, b, theta:', i, a, b, theta)
-
 
             # https://matplotlib.org/api/_as_gen/matplotlib.patches.Ellipse.html
                   # plot the ellipse marker and edge separately

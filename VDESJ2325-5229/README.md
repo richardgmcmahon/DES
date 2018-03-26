@@ -8,3 +8,8 @@ This is some resources that relate to our DES Gravitationally Lensed quasars dis
 Sextractor is on github here: https://github.com/astromatic/sextractor
 
 Sextractor documentation is here: http://sextractor.readthedocs.io
+
+
+### Moments
+
+There is a useful Blog item here: "Tracking object orientation with image moments": http://raphael.candelier.fr/?blog=Image%20Moments
