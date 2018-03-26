@@ -13,3 +13,5 @@ Sextractor documentation is here: http://sextractor.readthedocs.io
 ### Moments
 
 There is a useful Blog item here: "Tracking object orientation with image moments": http://raphael.candelier.fr/?blog=Image%20Moments
+
+See also this: https://alyssaq.github.io/2015/computing-the-axes-or-orientation-of-a-blob/ which has some python examples
