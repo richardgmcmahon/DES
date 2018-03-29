@@ -17,6 +17,8 @@ def moments2ellipse(X2, Y2, XY):
 
     tan2theta = 2.0 * XY / (X2 - Y2)
 
+    XYsign = np.sign(XY)
+
     # using arctan2 and not arctan
     theta = np.rad2deg(np.arctan(tan2theta) / 2.0)
 

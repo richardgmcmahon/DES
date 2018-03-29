@@ -548,9 +548,12 @@ def image_shape(data=None,
         hdulist = fits.open(infile)
         data = hdulist[1].data
 
+
+    # compare ellipse shape parameters
     X2 = data['X2_IMAGE']
     Y2 = data['Y2_IMAGE']
     XY = data['Y2_IMAGE']
+    ELONGATION = data['ELONGATION']
 
     A_moments, B_moments, THETA_moments = moments2ellipse(X2, Y2, XY)
 
@@ -558,6 +561,150 @@ def image_shape(data=None,
     B = data["B_IMAGE"]
     THETA = data['THETA_IMAGE']
 
+
+    plt.figure(figsize=(6.0, 6.0))
+
+    xdata = np.log10(A)
+    ydata = np.log10(A_moments)
+    ndata = len(xdata)
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+
+    plt.xlabel('Log10(A_IMAGE)')
+    plt.ylabel('Log10(A_IMAGE_moments)')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+    plotid()
+
+    plotfile = 'A_IMAGE_A_IMAGE_moments_' + waveband + '.png'
+    print('Saving plotfile: ', plotfile)
+    plt.savefig(plotfile)
+    plt.show()
+
+    # compare B
+    xdata = np.log10(B)
+    ydata = np.log10(B_moments)
+
+    plt.figure(figsize=(6.0, 6.0))
+
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+
+    plt.xlabel('Log10(B_IMAGE)')
+    plt.ylabel('Log10(B_IMAGE_moments)')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+    plotid()
+
+    plotfile = 'B_IMAGE_B_IMAGE_moments_'  + waveband + '.png'
+    print('Saving plotfile: ', plotfile)
+    plt.savefig(plotfile)
+    plt.show()
+
+
+    # xdata = np.log10(THETA)
+    # ydata = np.log10(THETA_moments)
+
+    xdata = THETA
+    ydata = THETA_moments
+
+    print('xrange:', np.min(xdata), np.max(xdata))
+    print('yrange:', np.min(ydata), np.max(ydata))
+
+    plt.figure(figsize=(6.0, 6.0))
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+
+    plt.xlabel('THETA_IMAGE')
+    plt.ylabel('THETA_IMAGE_moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+    plotid()
+
+    plotfile = 'B_THETA_B_THETA_Moments_'  + waveband + '.png'
+    print('Saving plotfile: ', plotfile)
+    plt.savefig(plotfile)
+    plt.show()
+
+
+    # Ellipticity
+    print()
+    print('Ellipticity')
+    plt.figure(figsize=(6.0, 6.0))
+
+    xdata = (1 - (B/A))
+    ydata = (1 - (B_moments/A_moments))
+
+    print('xdata range:', np.min(xdata), np.max(xdata))
+    print('xdata nanrange:', np.nanmin(xdata), np.nanmax(xdata))
+    print('ydata range:', np.min(ydata), np.max(ydata))
+    print('ydata nanrange:', np.nanmin(ydata), np.nanmax(ydata))
+
+    xydata_max = np.max([np.nanmax(xdata), np.nanmax(ydata)])
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+    plt.xlim(0.0, 1.0)
+    plt.ylim(0.0, 1.0)
+    plt.xlabel('Ellipticity: [A, B]_IMAGE')
+    plt.ylabel('Ellipticity: [A, B]_IMAGE_Moments')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plotfile = 'Ellipticity_Ellipticity_Moments'  + waveband + '.png'
+    print('Saving plotfile: ', plotfile)
+    plt.savefig(plotfile)
+    plt.show()
+
+
+
+    # Elongation
+    xdata = np.log10(A/B)
+    ydata = ELONGATION
+
+    plt.figure(figsize=(6.0, 6.0))
+
+    print('xdata range:', np.min(xdata), np.max(xdata))
+    print('xdata nanrange:', np.nanmin(xdata), np.nanmax(xdata))
+    print('ydata range:', np.min(ydata), np.max(ydata))
+    print('ydata nanrange:', np.nanmin(ydata), np.nanmax(ydata))
+
+    xydata_max = np.max([np.nanmax(xdata), np.nanmax(ydata)])
+    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
+    plt.xlim(0.0, xydata_max)
+    plt.ylim(0.0, xydata_max)
+    plt.xlabel('Elongation: A/B_IMAGE')
+    plt.ylabel('Elongation')
+    plt.title(infile + ':' + waveband, fontsize='medium')
+    plt.legend()
+
+    plotid()
+
+    plotfile = 'ElongationAB_Elongation_'  + waveband + '.png'
+    print('Saving plotfile: ', plotfile)
+    plt.savefig(plotfile)
+    plt.show()
+
+
+    plt.figure(figsize=(6.0, 6.0))
+
+
+
+    # FLUX_RADIUS
+    # APER_MAG_8
+
+    A = data["A_IMAGE"]
+    B = data["B_IMAGE"]
+    xdata = A * B
+    xdata = np.log10(xdata)
+    fwhm = data["FWHM_IMAGE"]
+    ydata = np.log10(fwhm)
+    plt.plot(xdata, ydata, "k.", ms=1)
+    plt.xlabel("A_IMAGE * B_IMAGE")
+    plt.ylabel("FWHM_IMAGE")
+    plt.title(infile + ': ' + waveband, fontsize='small')
+    plotid()
+
+    plt.show()
+
+    # compare Area estimators
     xdata = A * B
     xdata = np.log10(xdata)
 
@@ -582,93 +729,6 @@ def image_shape(data=None,
     plt.legend()
 
     plotid()
-
-    plt.show()
-
-    xdata = np.log10(A)
-    ydata = np.log10(A_moments)
-
-    plt.figure(figsize=(6.0, 6.0))
-
-    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
-
-    plt.xlabel('A_IMAGE')
-    plt.ylabel('A_IMAGE_moments')
-    plt.title(infile + ':' + waveband, fontsize='medium')
-    plt.legend()
-    plotid()
-
-    plt.show()
-
-    xdata = np.log10(B)
-    ydata = np.log10(B_moments)
-
-    plt.figure(figsize=(6.0, 6.0))
-    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
-    plt.xlabel('B_IMAGE')
-    plt.ylabel('B_IMAGE_moments')
-    plt.title(infile + ':' + waveband, fontsize='medium')
-    plt.legend()
-
-    plotid()
-
-    plt.show()
-
-
-    # xdata = np.log10(THETA)
-    # ydata = np.log10(THETA_moments)
-
-    xdata = THETA
-    ydata = THETA_moments
-
-    print('xrange:', np.min(xdata), np.max(xdata))
-    print('yrange:', np.min(ydata), np.max(ydata))
-
-    plt.figure(figsize=(6.0, 6.0))
-    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
-    plt.xlabel('THETA_IMAGE')
-    plt.ylabel('THETA_IMAGE_moments')
-    plt.title(infile + ':' + waveband, fontsize='medium')
-    plt.legend()
-
-    plotid()
-
-    plt.show()
-
-
-
-    xdata = np.log10(B/A)
-    ydata = np.log10(B_moments/A_moments)
-
-    plt.figure(figsize=(6.0, 6.0))
-    plt.plot(xdata, ydata, "k.", ms=1, label=str(ndata))
-    plt.xlabel('B/A_IMAGE')
-    plt.ylabel('B/A_IMAGE_moments')
-    plt.title(infile + ':' + waveband, fontsize='medium')
-    plt.legend()
-
-    plotid()
-
-    plt.show()
-
-
-
-
-
-    plt.figure(figsize=(6.0, 6.0))
-
-    A = data["A_IMAGE"]
-    B = data["B_IMAGE"]
-    xdata = A * B
-    xdata = np.log10(xdata)
-    fwhm = data["FWHM_IMAGE"]
-    ydata = np.log10(fwhm)
-    plt.plot(xdata, ydata, "k.", ms=1)
-    plt.xlabel("A_IMAGE * B_IMAGE")
-    plt.ylabel("FWHM_IMAGE")
-    plt.title(infile + ': ' + waveband, fontsize='small')
-    plotid()
-
     plt.show()
 
 
